@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Control QC">
+<title>Control de Calidad QC</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green: #6ee7b7;
+    --green2: #34d399;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --blue: #60a5fa;
+    --bg: #0a0a0f;
+    --bg2: #0f1525;
+    --glass: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text-dim: rgba(255,255,255,0.35);
+  }
+  html, body { height: 100%; background: var(--bg); color: #fff; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+  body { background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 50%, var(--bg) 100%); min-height: 100vh; }
+
+  /* LAYOUT */
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 80px; }
+  header { padding: 24px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
+  header h1 span { color: var(--green); }
+  header p { font-size: 11px; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
+  .header-icon { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, var(--green), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+
+  /* TABS */
+  #content { padding: 20px 16px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* BOTTOM NAV */
+  nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(10,10,15,0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; z-index: 100; }
+  nav button { flex: 1; padding: 14px 0 10px; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: rgba(255,255,255,0.3); font-family: 'DM Sans', sans-serif; }
+  nav button.active { color: var(--green); }
+  nav button span.icon { font-size: 20px; }
+  nav button span.label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+  nav button .dot { width: 4px; height: 4px; border-radius: 99px; background: var(--green); display: none; }
+  nav button.active .dot { display: block; }
+
+  /* CARDS */
+  .card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
+  .stat-label { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+  .stat-value { font-size: 28px; font-weight: 900; margin: 4px 0 2px; }
+  .stat-sub { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+  /* BADGE */
+  .badge { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; display: inline-block; }
+  .badge-ok { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .badge-fail { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+  .badge-rev { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+
+  /* DIST BAR */
+  .dist-bar { height: 12px; border-radius: 99px; overflow: hidden; display: flex; gap: 2px; margin: 10px 0 8px; }
+  .dist-bar div { border-radius: 99px; transition: width 0.4s; }
+  .legend { display: flex; gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(255,255,255,0.45); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 99px; }
+
+  /* RECENT LIST */
+  .recent-item { background: var(--glass); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .recent-item:active { opacity: 0.7; }
+  .recent-name { font-weight: 700; font-size: 14px; }
+  .recent-meta { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .form-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none; }
+  .form-input:focus { border-color: var(--green); }
+  textarea.form-input { resize: none; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ESTADO BTNS */
+  .estado-btns { display: flex; gap: 8px; }
+  .estado-btn { flex: 1; padding: 10px 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.4); font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .estado-btn.ok { border-color: #34d399; background: rgba(52,211,153,0.15); color: #34d399; }
+  .estado-btn.fail { border-color: #f87171; background: rgba(248,113,113,0.15); color: #f87171; }
+  .estado-btn.rev { border-color: #fbbf24; background: rgba(251,191,36,0.15); color: #fbbf24; }
+
+  /* CHECKLIST */
+  .checklist-box { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 16px; margin-bottom: 16px; }
+  .checklist-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .checklist-pct { font-size: 14px; font-weight: 900; color: var(--green); }
+  .progress-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--blue)); border-radius: 99px; transition: width 0.3s; }
+  .checklist-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-radius: 12px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.03); transition: all 0.15s; }
+  .checklist-row.ck-ok { background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.2); }
+  .checklist-row.ck-fail { background: rgba(248,113,113,0.07); border-color: rgba(248,113,113,0.2); }
+  .checklist-name { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.6); }
+  .checklist-row.ck-ok .checklist-name, .checklist-row.ck-fail .checklist-name { color: #fff; }
+  .ck-btns { display: flex; gap: 6px; }
+  .ck-btn { width: 34px; height: 34px; border-radius: 10px; border: none; cursor: pointer; font-size: 16px; background: rgba(255,255,255,0.08); transition: all 0.15s; }
+  .ck-btn.ck-btn-ok { background: #34d399; }
+  .ck-btn.ck-btn-fail { background: #f87171; }
+
+  /* DEFECTOS */
+  .defect-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .defect-tag { padding: 7px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5); font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+  .defect-tag.active { border-color: #f87171; background: rgba(248,113,113,0.15); color: #f87171; font-weight: 700; }
+
+  /* FOTOS */
+  .foto-label { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; border: 1px dashed rgba(110,231,183,0.3); border-radius: 14px; padding: 14px; cursor: pointer; color: var(--green); font-size: 13px; font-weight: 700; }
+  .foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .foto-item { position: relative; }
+  .foto-item img { width: 100%; height: 110px; object-fit: cover; border-radius: 12px; display: block; }
+  .foto-remove { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 99px; background: rgba(0,0,0,0.7); border: none; color: #fff; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+
+  /* SUBMIT BTN */
+  .submit-btn { width: 100%; padding: 16px; border-radius: 16px; border: none; cursor: pointer; background: linear-gradient(135deg, var(--green), var(--blue)); color: #000; font-weight: 900; font-size: 16px; font-family: 'DM Sans', sans-serif; margin-top: 8px; }
+  .submit-btn:disabled { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); cursor: not-allowed; }
+
+  /* FILTROS */
+  .filtro-bar { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .filtro-btn { white-space: nowrap; padding: 7px 14px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.4); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .filtro-btn.active { border-color: var(--green); background: rgba(110,231,183,0.1); color: var(--green); font-weight: 700; }
+
+  /* REGISTRO ITEM */
+  .reg-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px; margin-bottom: 8px; cursor: pointer; }
+  .reg-item.active { background: rgba(110,231,183,0.05); border-color: rgba(110,231,183,0.2); }
+  .reg-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .reg-name { font-weight: 700; font-size: 15px; }
+  .reg-meta { font-size: 12px; color: rgba(255,255,255,0.35); margin: 2px 0 4px; }
+  .reg-counts { display: flex; gap: 10px; font-size: 11px; }
+
+  /* DETALLE */
+  .detalle-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
+  .detalle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .detalle-close { background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 18px; }
+  .detalle-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .detalle-key { color: rgba(255,255,255,0.4); }
+  .detalle-val { font-weight: 600; text-align: right; max-width: 60%; }
+  .ck-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .ck-tag { font-size: 11px; padding: 4px 10px; border-radius: 99px; }
+  .ck-tag-ok { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.25); font-weight: 700; }
+  .ck-tag-fail { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.25); font-weight: 700; }
+  .ck-tag-none { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.07); }
+  .monday-badge { margin-top: 14px; padding: 10px 12px; background: rgba(110,231,183,0.07); border: 1px dashed rgba(110,231,183,0.2); border-radius: 12px; }
+  .monday-badge p:first-child { font-size: 11px; color: var(--green); letter-spacing: 1px; }
+  .monday-badge p:last-child { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+  /* LIGHTBOX */
+  #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+  #lightbox.show { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 90vh; border-radius: 16px; object-fit: contain; }
+  #lightbox-close { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; border-radius: 99px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 18px; cursor: pointer; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 40px 0; color: rgba(255,255,255,0.25); }
+  .empty .emoji { font-size: 48px; margin-bottom: 8px; }
+  .empty-btn { margin-top: 12px; background: linear-gradient(135deg, var(--green), var(--blue)); color: #000; font-weight: 800; border: none; border-radius: 12px; padding: 10px 20px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
+  .page-title { font-weight: 900; font-size: 20px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <p>Control de</p>
+      <h1>Calidad <span>QC</span></h1>
+    </div>
+    <div class="header-icon">🔍</div>
+  </header>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Total insp.</div><div class="stat-value" style="color:var(--green)" id="s-total">0</div><div class="stat-sub">inspecciones</div></div>
+        <div class="stat-card"><div class="stat-label">Tasa aprobación</div><div class="stat-value" style="color:var(--green)" id="s-tasa">0%</div><div class="stat-sub">del total</div></div>
+        <div class="stat-card"><div class="stat-label">Aprobados</div><div class="stat-value" style="color:#34d399" id="s-ok">0</div></div>
+        <div class="stat-card"><div class="stat-label">Rechazados</div><div class="stat-value" style="color:#f87171" id="s-fail">0</div></div>
+        <div class="stat-card"><div class="stat-label">En revisión</div><div class="stat-value" style="color:#fbbf24" id="s-rev">0</div></div>
+        <div class="stat-card"><div class="stat-label">Unidades</div><div class="stat-value" style="color:#60a5fa" id="s-units">0</div><div class="stat-sub">inspeccionadas</div></div>
+      </div>
+      <div id="dist-section" class="card" style="margin-bottom:16px;display:none">
+        <div class="section-title">Distribución</div>
+        <div class="dist-bar"><div id="bar-ok" style="background:linear-gradient(90deg,#34d399,#6ee7b7)"></div><div id="bar-fail" style="background:#f87171"></div><div id="bar-rev" style="background:#fbbf24"></div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Aprobado</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Rechazado</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>En revisión</div>
+        </div>
+      </div>
+      <div id="recent-section" style="display:none">
+        <div class="section-title">Recientes</div>
+        <div id="recent-list"></div>
+      </div>
+      <div id="empty-dash" class="empty">
+        <div class="emoji">📭</div>
+        <p>Sin inspecciones aún</p>
+        <button class="empty-btn" onclick="switchTab('nueva')">Nueva inspección</button>
+      </div>
+    </div>
+
+    <!-- NUEVA -->
+    <div id="tab-nueva" class="tab-panel">
+      <div class="page-title">Nueva inspección</div>
+      <div class="form-group">
+        <label class="form-label">Producto</label>
+        <input class="form-input" id="f-producto" placeholder="Nombre del producto">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Responsable</label>
+        <input class="form-input" id="f-responsable" placeholder="Tu nombre">
+      </div>
+      <div class="grid-2" style="margin-bottom:16px">
+        <div>
+          <label class="form-label">Fecha</label>
+          <input class="form-input" id="f-fecha" type="date">
+        </div>
+        <div>
+          <label class="form-label">Cantidad</label>
+          <input class="form-input" id="f-cantidad" type="number" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estado</label>
+        <div class="estado-btns">
+          <button class="estado-btn" id="eb-ok" onclick="setEstado('Aprobado')">Aprobado</button>
+          <button class="estado-btn" id="eb-fail" onclick="setEstado('Rechazado')">Rechazado</button>
+          <button class="estado-btn" id="eb-rev" onclick="setEstado('En revisión')">En revisión</button>
+        </div>
+      </div>
+
+      <!-- CHECKLIST -->
+      <div class="checklist-box">
+        <div class="checklist-header">
+          <div>
+            <div class="form-label" style="margin-bottom:4px">Checklist · Mueble Checkout</div>
+            <div id="ck-summary" style="font-size:12px;color:var(--text-dim)">0 ✓ · 0 ✕ · 16 pendientes</div>
+          </div>
+          <div class="checklist-pct" id="ck-pct">0%</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="ck-bar" style="width:0%"></div></div>
+        <div id="checklist-rows"></div>
+      </div>
+
+      <!-- DEFECTOS -->
+      <div class="form-group">
+        <label class="form-label">Defectos encontrados</label>
+        <div class="defect-tags" id="defect-tags"></div>
+      </div>
+
+      <!-- COMENTARIOS -->
+      <div class="form-group">
+        <label class="form-label">Comentarios</label>
+        <textarea class="form-input" id="f-comentarios" rows="3" placeholder="Observaciones adicionales..."></textarea>
+      </div>
+
+      <!-- FOTOS -->
+      <div class="form-group">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <label class="form-label" style="margin:0">Fotos del producto final</label>
+          <span id="foto-count" style="font-size:11px;color:rgba(255,255,255,0.3)">0 foto(s)</span>
+        </div>
+        <label class="foto-label">
+          <span style="font-size:22px">📷</span> Añadir foto(s)
+          <input type="file" accept="image/*" multiple capture="environment" id="foto-input" style="display:none" onchange="handleFotos(this)">
+        </label>
+        <div class="foto-grid" id="foto-preview"></div>
+      </div>
+
+      <button class="submit-btn" id="submit-btn" onclick="guardarInspeccion()" disabled>Guardar inspección</button>
+    </div>
+
+    <!-- REGISTROS -->
+    <div id="tab-registros" class="tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="page-title" style="margin:0">Registros</div>
+        <span id="reg-count" style="font-size:12px;color:var(--text-dim)">0 items</span>
+      </div>
+      <div class="filtro-bar">
+        <button class="filtro-btn active" onclick="setFiltro('Todos',this)">Todos</button>
+        <button class="filtro-btn" onclick="setFiltro('Aprobado',this)">Aprobado</button>
+        <button class="filtro-btn" onclick="setFiltro('Rechazado',this)">Rechazado</button>
+        <button class="filtro-btn" onclick="setFiltro('En revisión',this)">En revisión</button>
+      </div>
+      <div id="detalle-panel"></div>
+      <div id="reg-list"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- BOTTOM NAV -->
+<nav>
+  <button class="active" onclick="switchTab('dashboard')" id="nav-dashboard">
+    <span class="icon">📊</span><span class="label">Dashboard</span><div class="dot"></div>
+  </button>
+  <button onclick="switchTab('nueva')" id="nav-nueva">
+    <span class="icon">➕</span><span class="label">Nueva</span><div class="dot"></div>
+  </button>
+  <button onclick="switchTab('registros')" id="nav-registros">
+    <span class="icon">📋</span><span class="label">Registros</span><div class="dot"></div>
+  </button>
+</nav>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <img id="lightbox-img" src="" alt="foto">
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+</div>
+
+<script>
+const CHECKLIST = [
+  "Cubierta","Tapacantos","Bandejas","Costillas","Rejilla",
+  "Barras","Ranuras","Flejera","TDA","LEDs",
+  "Difusores","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"
+];
+const DEFECTS = ["Daño físico","Error de etiquetado","Contaminación","Medidas incorrectas","Color incorrecto","Otro"];
+
+let registros = [];
+let currentTab = 'dashboard';
+let filtro = 'Todos';
+let detalleId = null;
+let formFotos = [];
+let formChecklist = {};
+let formDefectos = [];
+let formEstado = '';
+
+// Init
+try { registros = JSON.parse(localStorage.getItem('qc_registros') || '[]'); } catch {}
+CHECKLIST.forEach(k => formChecklist[k] = null);
+document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+buildChecklist();
+buildDefects();
+renderDashboard();
+renderRegistros();
+
+function save() {
+  try { localStorage.setItem('qc_registros', JSON.stringify(registros)); } catch {}
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  currentTab = tab;
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'registros') renderRegistros();
+}
+
+function badgeClass(estado) {
+  if (estado === 'Aprobado') return 'badge badge-ok';
+  if (estado === 'Rechazado') return 'badge badge-fail';
+  return 'badge badge-rev';
+}
+
+// DASHBOARD
+function renderDashboard() {
+  const total = registros.length;
+  const ok = registros.filter(r => r.estado === 'Aprobado').length;
+  const fail = registros.filter(r => r.estado === 'Rechazado').length;
+  const rev = registros.filter(r => r.estado === 'En revisión').length;
+  const units = registros.reduce((a, r) => a + Number(r.cantidad || 0), 0);
+  const tasa = total ? Math.round((ok / total) * 100) : 0;
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-tasa').textContent = tasa + '%';
+  document.getElementById('s-ok').textContent = ok;
+  document.getElementById('s-fail').textContent = fail;
+  document.getElementById('s-rev').textContent = rev;
+  document.getElementById('s-units').textContent = units;
+
+  const hasData = total > 0;
+  document.getElementById('dist-section').style.display = hasData ? 'block' : 'none';
+  document.getElementById('recent-section').style.display = hasData ? 'block' : 'none';
+  document.getElementById('empty-dash').style.display = hasData ? 'none' : 'block';
+
+  if (hasData) {
+    document.getElementById('bar-ok').style.width = tasa + '%';
+    document.getElementById('bar-fail').style.width = Math.round((fail/total)*100) + '%';
+    document.getElementById('bar-rev').style.width = Math.round((rev/total)*100) + '%';
+
+    const rl = document.getElementById('recent-list');
+    rl.innerHTML = registros.slice(0,3).map(r => `
+      <div class="recent-item" onclick="switchTab('registros');showDetalle('${r.id}')">
+        <div><div class="recent-name">${r.producto}</div><div class="recent-meta">${r.responsable} · ${r.fecha}</div></div>
+        <span class="${badgeClass(r.estado)}">${r.estado}</span>
+      </div>`).join('');
+  }
+}
+
+// CHECKLIST BUILDER
+function buildChecklist() {
+  const cont = document.getElementById('checklist-rows');
+  cont.innerHTML = CHECKLIST.map(item => `
+    <div class="checklist-row" id="ckrow-${CSS.escape(item)}">
+      <span class="checklist-name">${item}</span>
+      <div class="ck-btns">
+        <button class="ck-btn" id="ckb-ok-${CSS.escape(item)}" onclick="setCk('${item}',true)">✓</button>
+        <button class="ck-btn" id="ckb-fail-${CSS.escape(item)}" onclick="setCk('${item}',false)">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function CSS_escape(str) { return str.replace(/[^a-zA-Z0-9-_]/g, '_'); }
+
+function buildChecklist() {
+  const cont = document.getElementById('checklist-rows');
+  cont.innerHTML = CHECKLIST.map((item, i) => `
+    <div class="checklist-row" id="ckrow-${i}">
+      <span class="checklist-name">${item}</span>
+      <div class="ck-btns">
+        <button class="ck-btn" id="ckb-ok-${i}" onclick="setCk(${i},true)">✓</button>
+        <button class="ck-btn" id="ckb-fail-${i}" onclick="setCk(${i},false)">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function setCk(idx, val) {
+  const item = CHECKLIST[idx];
+  const current = formChecklist[item];
+  formChecklist[item] = current === val ? null : val;
+  updateCkRow(idx);
+  updateCkProgress();
+  checkSubmit();
+}
+
+function updateCkRow(idx) {
+  const item = CHECKLIST[idx];
+  const v = formChecklist[item];
+  const row = document.getElementById('ckrow-' + idx);
+  row.className = 'checklist-row' + (v === true ? ' ck-ok' : v === false ? ' ck-fail' : '');
+  const okBtn = document.getElementById('ckb-ok-' + idx);
+  const failBtn = document.getElementById('ckb-fail-' + idx);
+  okBtn.className = 'ck-btn' + (v === true ? ' ck-btn-ok' : '');
+  failBtn.className = 'ck-btn' + (v === false ? ' ck-btn-fail' : '');
+}
+
+function updateCkProgress() {
+  const vals = Object.values(formChecklist);
+  const ok = vals.filter(v => v === true).length;
+  const fail = vals.filter(v => v === false).length;
+  const total = CHECKLIST.length;
+  const pct = Math.round(((ok + fail) / total) * 100);
+  document.getElementById('ck-pct').textContent = pct + '%';
+  document.getElementById('ck-bar').style.width = pct + '%';
+  document.getElementById('ck-summary').textContent = `${ok} ✓ · ${fail} ✕ · ${total - ok - fail} pendientes`;
+}
+
+// DEFECTS
+function buildDefects() {
+  const cont = document.getElementById('defect-tags');
+  cont.innerHTML = DEFECTS.map((d, i) => `
+    <button class="defect-tag" id="dtag-${i}" onclick="toggleDefect(${i})">${d}</button>`).join('');
+}
+
+function toggleDefect(idx) {
+  const d = DEFECTS[idx];
+  const btn = document.getElementById('dtag-' + idx);
+  if (formDefectos.includes(d)) {
+    formDefectos = formDefectos.filter(x => x !== d);
+    btn.classList.remove('active');
+  } else {
+    formDefectos.push(d);
+    btn.classList.add('active');
+  }
+}
+
+// ESTADO
+function setEstado(e) {
+  formEstado = e;
+  document.getElementById('eb-ok').className = 'estado-btn' + (e === 'Aprobado' ? ' ok' : '');
+  document.getElementById('eb-fail').className = 'estado-btn' + (e === 'Rechazado' ? ' fail' : '');
+  document.getElementById('eb-rev').className = 'estado-btn' + (e === 'En revisión' ? ' rev' : '');
+  checkSubmit();
+}
+
+// FOTOS
+function handleFotos(input) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      formFotos.push(ev.target.result);
+      renderFotoPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderFotoPreview() {
+  document.getElementById('foto-count').textContent = formFotos.length + ' foto(s)';
+  document.getElementById('foto-preview').innerHTML = formFotos.map((src, i) => `
+    <div class="foto-item">
+      <img src="${src}" onclick="openLightbox('${src}')">
+      <button class="foto-remove" onclick="removeFoto(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeFoto(idx) {
+  formFotos.splice(idx, 1);
+  renderFotoPreview();
+}
+
+// LIGHTBOX
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+}
+
+// SUBMIT
+function checkSubmit() {
+  const ok = document.getElementById('f-producto').value.trim() &&
+             document.getElementById('f-responsable').value.trim() &&
+             document.getElementById('f-cantidad').value.trim() &&
+             formEstado;
+  document.getElementById('submit-btn').disabled = !ok;
+}
+document.getElementById('f-producto').addEventListener('input', checkSubmit);
+document.getElementById('f-responsable').addEventListener('input', checkSubmit);
+document.getElementById('f-cantidad').addEventListener('input', checkSubmit);
+
+function guardarInspeccion() {
+  const nuevo = {
+    id: Date.now().toString(),
+    producto: document.getElementById('f-producto').value.trim(),
+    responsable: document.getElementById('f-responsable').value.trim(),
+    fecha: document.getElementById('f-fecha').value,
+    cantidad: document.getElementById('f-cantidad').value,
+    estado: formEstado,
+    checklist: { ...formChecklist },
+    defectos: [...formDefectos],
+    comentarios: document.getElementById('f-comentarios').value,
+    fotos: [...formFotos],
+    creado: new Date().toISOString(),
+  };
+  registros.unshift(nuevo);
+  save();
+
+  // Reset form
+  document.getElementById('f-producto').value = '';
+  document.getElementById('f-responsable').value = '';
+  document.getElementById('f-cantidad').value = '';
+  document.getElementById('f-comentarios').value = '';
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  formEstado = '';
+  formDefectos = [];
+  formFotos = [];
+  CHECKLIST.forEach(k => formChecklist[k] = null);
+  setEstado('');
+  DEFECTS.forEach((_, i) => document.getElementById('dtag-' + i).classList.remove('active'));
+  CHECKLIST.forEach((_, i) => updateCkRow(i));
+  updateCkProgress();
+  renderFotoPreview();
+  document.getElementById('submit-btn').disabled = true;
+
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = '✅ Guardado!';
+  setTimeout(() => { btn.textContent = 'Guardar inspección'; }, 2000);
+
+  switchTab('registros');
+}
+
+// REGISTROS
+function setFiltro(f, btn) {
+  filtro = f;
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRegistros();
+}
+
+function renderRegistros() {
+  const filtered = filtro === 'Todos' ? registros : registros.filter(r => r.estado === filtro);
+  document.getElementById('reg-count').textContent = filtered.length + ' items';
+
+  const list = document.getElementById('reg-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="emoji">📭</div><p>Sin registros</p></div>';
+    return;
+  }
+  list.innerHTML = filtered.map(r => {
+    const ck = r.checklist || {};
+    const okC = Object.values(ck).filter(v => v === true).length;
+    const failC = Object.values(ck).filter(v => v === false).length;
+    const isActive = detalleId === r.id;
+    return `<div class="reg-item ${isActive ? 'active' : ''}" onclick="toggleDetalle('${r.id}')">
+      <div class="reg-top">
+        <div>
+          <div class="reg-name">${r.producto}</div>
+          <div class="reg-meta">${r.responsable} · ${r.fecha} · ${r.cantidad} uds</div>
+          <div class="reg-counts">
+            <span style="color:#34d399">✓ ${okC}</span>
+            <span style="color:#f87171">✕ ${failC}</span>
+            ${r.fotos?.length ? `<span style="color:rgba(255,255,255,0.35)">📷 ${r.fotos.length}</span>` : ''}
+          </div>
+        </div>
+        <span class="${badgeClass(r.estado)}">${r.estado}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDetalle(id) {
+  detalleId = id;
+  renderDetalle();
+  renderRegistros();
+}
+
+function toggleDetalle(id) {
+  detalleId = detalleId === id ? null : id;
+  renderDetalle();
+  renderRegistros();
+}
+
+function renderDetalle() {
+  const panel = document.getElementById('detalle-panel');
+  if (!detalleId) { panel.innerHTML = ''; return; }
+  const r = registros.find(x => x.id === detalleId);
+  if (!r) { panel.innerHTML = ''; return; }
+
+  const ckTags = CHECKLIST.map(item => {
+    const v = r.checklist?.[item];
+    const cls = v === true ? 'ck-tag ck-tag-ok' : v === false ? 'ck-tag ck-tag-fail' : 'ck-tag ck-tag-none';
+    const icon = v === true ? '✓' : v === false ? '✕' : '·';
+    return `<span class="${cls}">${icon} ${item}</span>`;
+  }).join('');
+
+  const fotosHtml = r.fotos?.length ? `
+    <div style="margin-top:14px">
+      <div class="section-title">Fotos (${r.fotos.length})</div>
+      <div class="foto-grid">${r.fotos.map(src => `<img src="${src}" style="width:100%;height:100px;object-fit:cover;border-radius:12px;cursor:pointer" onclick="openLightbox('${src}')">`).join('')}</div>
+    </div>` : '';
+
+  panel.innerHTML = `
+    <div class="detalle-box">
+      <div class="detalle-header">
+        <div style="font-weight:900;font-size:16px">${r.producto}</div>
+        <button class="detalle-close" onclick="toggleDetalle('${r.id}')">✕</button>
+      </div>
+      <span class="${badgeClass(r.estado)}">${r.estado}</span>
+      <div style="margin-top:12px">
+        ${[['Responsable',r.responsable],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds'],['Defectos',r.defectos?.join(', ')||'Ninguno'],['Comentarios',r.comentarios||'—']].map(([k,v])=>`
+        <div class="detalle-row"><span class="detalle-key">${k}</span><span class="detalle-val">${v}</span></div>`).join('')}
+      </div>
+      <div style="margin-top:14px">
+        <div class="section-title">Checklist</div>
+        <div class="ck-tags">${ckTags}</div>
+      </div>
+      ${fotosHtml}
+      <div class="monday-badge">
+        <p>📌 MONDAY.COM</p>
+        <p>Conectado · Listo para sincronizar</p>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>

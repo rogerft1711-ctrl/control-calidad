@@ -1,0 +1,22 @@
+{
+  "name": "Control de Calidad QC",
+  "short_name": "Control QC",
+  "description": "App de control de calidad para inspección de muebles",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/icons/svg?seed=qc&backgroundColor=6ee7b7&icon=search",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/icons/svg?seed=qc&backgroundColor=6ee7b7&icon=search",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
