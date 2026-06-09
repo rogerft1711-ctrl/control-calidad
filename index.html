@@ -11,661 +11,1225 @@
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --green: #6ee7b7;
-    --green2: #34d399;
-    --red: #f87171;
-    --amber: #fbbf24;
-    --blue: #60a5fa;
-    --bg: #0a0a0f;
-    --bg2: #0f1525;
-    --glass: rgba(255,255,255,0.04);
-    --border: rgba(255,255,255,0.08);
-    --text-dim: rgba(255,255,255,0.35);
-  }
-  html, body { height: 100%; background: var(--bg); color: #fff; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
-  body { background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 50%, var(--bg) 100%); min-height: 100vh; }
-
-  /* LAYOUT */
-  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 80px; }
-  header { padding: 24px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  header h1 { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
-  header h1 span { color: var(--green); }
-  header p { font-size: 11px; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
-  .header-icon { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, var(--green), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-
-  /* TABS */
-  #content { padding: 20px 16px; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  /* BOTTOM NAV */
-  nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(10,10,15,0.95); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; z-index: 100; }
-  nav button { flex: 1; padding: 14px 0 10px; border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; color: rgba(255,255,255,0.3); font-family: 'DM Sans', sans-serif; }
-  nav button.active { color: var(--green); }
-  nav button span.icon { font-size: 20px; }
-  nav button span.label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
-  nav button .dot { width: 4px; height: 4px; border-radius: 99px; background: var(--green); display: none; }
-  nav button.active .dot { display: block; }
-
-  /* CARDS */
-  .card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-  .stat-card { background: var(--glass); border: 1px solid var(--border); border-radius: 20px; padding: 16px; }
-  .stat-label { font-size: 10px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
-  .stat-value { font-size: 28px; font-weight: 900; margin: 4px 0 2px; }
-  .stat-sub { font-size: 11px; color: rgba(255,255,255,0.3); }
-
-  /* BADGE */
-  .badge { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 99px; display: inline-block; }
-  .badge-ok { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
-  .badge-fail { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
-  .badge-rev { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
-
-  /* DIST BAR */
-  .dist-bar { height: 12px; border-radius: 99px; overflow: hidden; display: flex; gap: 2px; margin: 10px 0 8px; }
-  .dist-bar div { border-radius: 99px; transition: width 0.4s; }
-  .legend { display: flex; gap: 12px; }
-  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(255,255,255,0.45); }
-  .legend-dot { width: 8px; height: 8px; border-radius: 99px; }
-
-  /* RECENT LIST */
-  .recent-item { background: var(--glass); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-  .recent-item:active { opacity: 0.7; }
-  .recent-name { font-weight: 700; font-size: 14px; }
-  .recent-meta { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
-
-  /* FORM */
-  .form-group { margin-bottom: 16px; }
-  .form-label { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 6px; }
-  .form-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none; }
-  .form-input:focus { border-color: var(--green); }
-  textarea.form-input { resize: none; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-  /* ESTADO BTNS */
-  .estado-btns { display: flex; gap: 8px; }
-  .estado-btn { flex: 1; padding: 10px 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-weight: 700; font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.4); font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
-  .estado-btn.ok { border-color: #34d399; background: rgba(52,211,153,0.15); color: #34d399; }
-  .estado-btn.fail { border-color: #f87171; background: rgba(248,113,113,0.15); color: #f87171; }
-  .estado-btn.rev { border-color: #fbbf24; background: rgba(251,191,36,0.15); color: #fbbf24; }
-
-  /* CHECKLIST */
-  .checklist-box { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 20px; padding: 16px; margin-bottom: 16px; }
-  .checklist-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .checklist-pct { font-size: 14px; font-weight: 900; color: var(--green); }
-  .progress-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--blue)); border-radius: 99px; transition: width 0.3s; }
-  .checklist-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-radius: 12px; margin-bottom: 6px; border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.03); transition: all 0.15s; }
-  .checklist-row.ck-ok { background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.2); }
-  .checklist-row.ck-fail { background: rgba(248,113,113,0.07); border-color: rgba(248,113,113,0.2); }
-  .checklist-name { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.6); }
-  .checklist-row.ck-ok .checklist-name, .checklist-row.ck-fail .checklist-name { color: #fff; }
-  .ck-btns { display: flex; gap: 6px; }
-  .ck-btn { width: 34px; height: 34px; border-radius: 10px; border: none; cursor: pointer; font-size: 16px; background: rgba(255,255,255,0.08); transition: all 0.15s; }
-  .ck-btn.ck-btn-ok { background: #34d399; }
-  .ck-btn.ck-btn-fail { background: #f87171; }
-
-  /* DEFECTOS */
-  .defect-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-  .defect-tag { padding: 7px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5); font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
-  .defect-tag.active { border-color: #f87171; background: rgba(248,113,113,0.15); color: #f87171; font-weight: 700; }
-
-  /* FOTOS */
-  .foto-label { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; border: 1px dashed rgba(110,231,183,0.3); border-radius: 14px; padding: 14px; cursor: pointer; color: var(--green); font-size: 13px; font-weight: 700; }
-  .foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-  .foto-item { position: relative; }
-  .foto-item img { width: 100%; height: 110px; object-fit: cover; border-radius: 12px; display: block; }
-  .foto-remove { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 99px; background: rgba(0,0,0,0.7); border: none; color: #fff; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
-
-  /* SUBMIT BTN */
-  .submit-btn { width: 100%; padding: 16px; border-radius: 16px; border: none; cursor: pointer; background: linear-gradient(135deg, var(--green), var(--blue)); color: #000; font-weight: 900; font-size: 16px; font-family: 'DM Sans', sans-serif; margin-top: 8px; }
-  .submit-btn:disabled { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); cursor: not-allowed; }
-
-  /* FILTROS */
-  .filtro-bar { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
-  .filtro-btn { white-space: nowrap; padding: 7px 14px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.4); font-family: 'DM Sans', sans-serif; font-weight: 400; }
-  .filtro-btn.active { border-color: var(--green); background: rgba(110,231,183,0.1); color: var(--green); font-weight: 700; }
-
-  /* REGISTRO ITEM */
-  .reg-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px; margin-bottom: 8px; cursor: pointer; }
-  .reg-item.active { background: rgba(110,231,183,0.05); border-color: rgba(110,231,183,0.2); }
-  .reg-top { display: flex; justify-content: space-between; align-items: flex-start; }
-  .reg-name { font-weight: 700; font-size: 15px; }
-  .reg-meta { font-size: 12px; color: rgba(255,255,255,0.35); margin: 2px 0 4px; }
-  .reg-counts { display: flex; gap: 10px; font-size: 11px; }
-
-  /* DETALLE */
-  .detalle-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
-  .detalle-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-  .detalle-close { background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 18px; }
-  .detalle-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
-  .detalle-key { color: rgba(255,255,255,0.4); }
-  .detalle-val { font-weight: 600; text-align: right; max-width: 60%; }
-  .ck-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .ck-tag { font-size: 11px; padding: 4px 10px; border-radius: 99px; }
-  .ck-tag-ok { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.25); font-weight: 700; }
-  .ck-tag-fail { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.25); font-weight: 700; }
-  .ck-tag-none { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.07); }
-  .monday-badge { margin-top: 14px; padding: 10px 12px; background: rgba(110,231,183,0.07); border: 1px dashed rgba(110,231,183,0.2); border-radius: 12px; }
-  .monday-badge p:first-child { font-size: 11px; color: var(--green); letter-spacing: 1px; }
-  .monday-badge p:last-child { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; }
-
-  /* LIGHTBOX */
-  #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.93); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-  #lightbox.show { display: flex; }
-  #lightbox img { max-width: 100%; max-height: 90vh; border-radius: 16px; object-fit: contain; }
-  #lightbox-close { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; border-radius: 99px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 18px; cursor: pointer; }
-
-  /* EMPTY */
-  .empty { text-align: center; padding: 40px 0; color: rgba(255,255,255,0.25); }
-  .empty .emoji { font-size: 48px; margin-bottom: 8px; }
-  .empty-btn { margin-top: 12px; background: linear-gradient(135deg, var(--green), var(--blue)); color: #000; font-weight: 800; border: none; border-radius: 12px; padding: 10px 20px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-
-  /* SECTION TITLE */
-  .section-title { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
-  .page-title { font-weight: 900; font-size: 20px; margin-bottom: 16px; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#6ee7b7;--green2:#34d399;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;
+  --orange:#f97316;--bg:#0a0a0f;--bg2:#0f1525;
+  --glass:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);--dim:rgba(255,255,255,0.35)
+}
+html,body{height:100%;background:var(--bg);color:#fff;font-family:'DM Sans',sans-serif}
+body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100%);min-height:100vh}
+#app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:82px}
+header{padding:18px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:23px;font-weight:900;letter-spacing:-1px}
+header h1 span{color:var(--green)}
+header p{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase}
+.hicon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--green),var(--blue));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+#content{padding:14px 13px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(10,10,15,0.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100}
+nav button{flex:1;padding:10px 0 8px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:rgba(255,255,255,0.3);font-family:'DM Sans',sans-serif}
+nav button.active{color:var(--green)}
+nav button .ni{font-size:16px}
+nav button .nl{font-size:8px;font-weight:700;letter-spacing:.3px}
+nav button .nd{width:3px;height:3px;border-radius:99px;background:var(--green);display:none}
+nav button.active .nd{display:block}
+/* ── DASHBOARD ── */
+.dash-hero{position:relative;border-radius:22px;overflow:hidden;margin-bottom:13px;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364)}
+.dash-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(110,231,183,0.15),transparent 70%),radial-gradient(ellipse at 20% 80%,rgba(59,130,246,0.12),transparent 60%)}
+.dash-hero-content{position:relative;padding:20px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.dash-hero-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.45)}
+.dash-hero-ring{filter:drop-shadow(0 0 18px rgba(110,231,183,0.3))}
+.dash-hero-stats{display:flex;align-items:center;width:100%;justify-content:center;background:rgba(255,255,255,0.05);border-radius:14px;border:1px solid rgba(255,255,255,0.08);padding:12px 0}
+.dash-hero-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.dhs-val{font-size:20px;font-weight:900;color:#fff}
+.dhs-label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.dash-hero-divider{width:1px;height:32px;background:rgba(255,255,255,0.1)}
+.dash-mini-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:13px}
+.dash-mini{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:11px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;overflow:hidden}
+.dash-mini::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--mc);opacity:.7}
+.dm-icon{font-size:16px}.dm-val{font-size:19px;font-weight:900;color:var(--mc)}
+.dm-label{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.35);text-align:center}
+.dash-dist-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:13px;margin-bottom:12px}
+.dash-dist-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.dash-dist-bar{display:flex;height:32px;border-radius:10px;overflow:hidden;gap:2px;margin-bottom:9px}
+.dbar-ok{background:linear-gradient(90deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;transition:width .6s ease;border-radius:8px 0 0 8px}
+.dbar-fail{background:linear-gradient(90deg,#dc2626,#f87171);display:flex;align-items:center;justify-content:center;transition:width .6s ease}
+.dbar-rev{background:linear-gradient(90deg,#d97706,#fbbf24);display:flex;align-items:center;justify-content:center;transition:width .6s ease;border-radius:0 8px 8px 0}
+.dbar-ok span,.dbar-fail span,.dbar-rev span{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;padding:0 4px}
+.dash-legend{display:flex;gap:10px;flex-wrap:wrap}
+.dl-item{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,0.5)}
+.dl-dot{width:7px;height:7px;border-radius:99px;flex-shrink:0}
+/* MONTH COMPARE */
+.compare-card{background:var(--glass);border:1px solid var(--border);border-radius:16px;padding:13px;margin-bottom:12px}
+.compare-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.compare-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.compare-month{font-size:10px;color:rgba(255,255,255,0.45);width:40px;flex-shrink:0;text-align:right}
+.compare-bar-wrap{flex:1;height:20px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;position:relative}
+.compare-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:6px;transition:width .5s ease}
+.compare-pct{font-size:10px;font-weight:800;color:#fff;white-space:nowrap}
+.compare-delta{font-size:10px;font-weight:700;width:36px;text-align:right;flex-shrink:0}
+/* ALARMAS */
+.alarm-banner{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);border-radius:13px;padding:11px;margin-bottom:11px}
+.alarm-banner h3{font-size:11px;font-weight:900;color:#fca5a5;margin-bottom:6px}
+.alarm-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(239,68,68,0.1);font-size:11px}
+.alarm-item:last-child{border:none}
+.alarm-name{color:#fca5a5;font-weight:700}
+.alarm-pct{color:#ef4444;font-weight:900;font-size:12px}
+.alarm-sub{font-size:9px;color:rgba(255,255,255,0.3)}
+.trend-banner{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:13px;padding:11px;margin-bottom:11px}
+.trend-banner h3{font-size:11px;font-weight:900;color:#fbbf24;margin-bottom:6px}
+.trend-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(251,191,36,0.1);font-size:11px}
+.trend-item:last-child{border:none}
+.trend-name{color:#fde68a;font-weight:700}
+.trend-streak{color:#f59e0b;font-weight:900}
+.dash-section-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:9px;display:flex;align-items:center;gap:5px}
+.dash-section-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.07)}
+.dash-recent-item{background:var(--glass);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:11px 13px;margin-bottom:6px;cursor:pointer}
+.dash-recent-item.has-ret{border-left:3px solid var(--orange)}
+.dri-name{font-weight:700;font-size:13px}
+.dri-meta{font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px}
+.dash-see-all{width:100%;padding:10px;border-radius:11px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:3px;margin-bottom:10px}
+.dash-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:44px 20px}
+.dash-empty-icon{font-size:48px;margin-bottom:12px;filter:drop-shadow(0 0 18px rgba(110,231,183,0.3))}
+.dash-empty-title{font-size:17px;font-weight:900;margin-bottom:5px}
+.dash-empty-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:18px}
+.dash-empty-btn{background:linear-gradient(135deg,var(--green),var(--blue));color:#000;font-weight:900;border:none;border-radius:13px;padding:12px 26px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif}
+/* ── WIZARD FORM ── */
+.wizard-steps{display:flex;align-items:center;margin-bottom:18px;gap:0}
+.wstep{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.wstep-circle{width:30px;height:30px;border-radius:99px;border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:rgba(255,255,255,0.3);transition:all .2s}
+.wstep.active .wstep-circle{border-color:var(--green);color:var(--green);background:rgba(110,231,183,0.1)}
+.wstep.done .wstep-circle{border-color:var(--green2);background:var(--green2);color:#000}
+.wstep-label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.3)}
+.wstep.active .wstep-label{color:var(--green)}
+.wstep.done .wstep-label{color:var(--green2)}
+.wline{flex:1;height:1px;background:rgba(255,255,255,0.1);margin-bottom:14px}
+.wline.done{background:var(--green2)}
+.wizard-page{display:none}.wizard-page.active{display:block}
+.wizard-nav{display:flex;gap:8px;margin-top:14px}
+.wbtn-prev{flex:1;padding:11px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.5);font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.wbtn-next{flex:2;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--green),var(--blue));color:#000;font-weight:900;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.wbtn-next:disabled{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);cursor:not-allowed}
+/* FORM ELEMENTS */
+.fg{margin-bottom:11px}
+.flabel{font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:4px}
+.finput{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+.finput:focus{border-color:var(--green)}
+textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.estado-btns{display:flex;gap:6px}
+.ebtn{flex:1;padding:9px 4px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);font-weight:700;font-size:11px;cursor:pointer;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;transition:all .15s}
+.ebtn.ok{border-color:#34d399;background:rgba(52,211,153,0.15);color:#34d399}
+.ebtn.fail{border-color:#f87171;background:rgba(248,113,113,0.15);color:#f87171}
+.ebtn.rev{border-color:#fbbf24;background:rgba(251,191,36,0.15);color:#fbbf24}
+/* CHECKLIST */
+.ck-box{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:15px;padding:12px;margin-bottom:11px}
+.ck-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px}
+.ck-pct{font-size:12px;font-weight:900;color:var(--green)}
+.prog-bar{height:4px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:10px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:99px;transition:width .3s}
+.ck-all-btn{width:100%;padding:8px;border-radius:9px;border:1px solid rgba(110,231,183,0.3);background:rgba(110,231,183,0.07);color:var(--green);font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:9px}
+.ck-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:9px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03)}
+.ck-row.cok{background:rgba(52,211,153,0.07);border-color:rgba(52,211,153,0.2)}
+.ck-row.cfail{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.2)}
+.ck-name{font-size:12px;font-weight:500;color:rgba(255,255,255,0.6)}
+.ck-row.cok .ck-name,.ck-row.cfail .ck-name{color:#fff}
+.ckbtns{display:flex;gap:4px}
+.ckb{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;font-size:13px;background:rgba(255,255,255,0.08)}
+.ckb.bok{background:#34d399}.ckb.bfail{background:#f87171}
+/* DEFECTS WITH SEVERITY */
+.defect-section{margin-bottom:11px}
+.sev-group{margin-bottom:9px}
+.sev-label{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:800;padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:5px}
+.sev-critico{background:rgba(239,68,68,0.2);color:#fca5a5}
+.sev-mayor{background:rgba(249,115,22,0.2);color:#fdba74}
+.sev-menor{background:rgba(251,191,36,0.2);color:#fde68a}
+.defect-tags{display:flex;flex-wrap:wrap;gap:5px}
+.dtag{padding:5px 10px;border-radius:99px;border:1px solid rgba(255,255,255,0.1);font-size:11px;cursor:pointer;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);font-family:'DM Sans',sans-serif;transition:all .15s}
+.dtag.active-critico{border-color:#ef4444;background:rgba(239,68,68,0.15);color:#fca5a5;font-weight:700}
+.dtag.active-mayor{border-color:#f97316;background:rgba(249,115,22,0.15);color:#fdba74;font-weight:700}
+.dtag.active-menor{border-color:#fbbf24;background:rgba(251,191,36,0.15);color:#fde68a;font-weight:700}
+/* RETRABAJO */
+.ret-box{background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.25);border-radius:13px;padding:12px;margin-bottom:11px;display:none}
+.ret-box.show{display:block}
+.ret-box-title{font-size:11px;font-weight:900;color:#fdba74;margin-bottom:9px}
+.ret-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:9px;margin-bottom:7px}
+.ret-section-label{font-size:9px;letter-spacing:1px;color:rgba(249,115,22,0.7);text-transform:uppercase;margin-bottom:6px;font-weight:700}
+/* FOTO */
+.foto-label{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;border:1px dashed rgba(110,231,183,0.3);border-radius:11px;padding:10px;cursor:pointer;color:var(--green);font-size:12px;font-weight:700}
+.foto-required{border-color:rgba(239,68,68,0.5)!important;background:rgba(239,68,68,0.07)!important}
+.foto-required span{color:#f87171!important}
+.req-warn{font-size:10px;color:#f87171;margin-top:4px;display:none}
+.req-warn.show{display:block}
+.foto-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:7px}
+.foto-item{position:relative}
+.foto-item img{width:100%;height:85px;object-fit:cover;border-radius:9px;display:block}
+.foto-rm{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:99px;background:rgba(0,0,0,0.7);border:none;color:#fff;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center}
+/* REGISTROS */
+.search-bar{display:flex;align-items:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:11px;padding:8px 12px;margin-bottom:10px;gap:7px}
+.search-bar input{flex:1;background:none;border:none;color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+.search-bar input::placeholder{color:rgba(255,255,255,0.3)}
+.search-icon{font-size:14px;color:rgba(255,255,255,0.3)}
+.filtro-bar{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;padding-bottom:3px}
+.fbtn{white-space:nowrap;padding:5px 11px;border-radius:99px;border:1px solid rgba(255,255,255,0.1);font-size:10px;cursor:pointer;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif}
+.fbtn.active{border-color:var(--green);background:rgba(110,231,183,0.1);color:var(--green);font-weight:700}
+.reg-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:11px;margin-bottom:6px;cursor:pointer}
+.reg-item.sel{background:rgba(110,231,183,0.05);border-color:rgba(110,231,183,0.2)}
+.reg-item.has-ret{border-left:3px solid var(--orange)}
+.reg-top{display:flex;justify-content:space-between;align-items:flex-start}
+.reg-name{font-weight:700;font-size:13px}
+.reg-meta{font-size:10px;color:rgba(255,255,255,0.35);margin:2px 0 3px}
+.reg-counts{display:flex;gap:6px;font-size:10px;flex-wrap:wrap}
+/* DETALLE */
+.det-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:17px;padding:13px;margin-bottom:10px}
+.det-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.det-close{background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:16px}
+.det-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.det-k{color:rgba(255,255,255,0.4)}.det-v{font-weight:600;text-align:right;max-width:65%}
+.ck-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.cktag{font-size:10px;padding:3px 7px;border-radius:99px}
+.cktag-ok{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);font-weight:700}
+.cktag-fail{background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.25);font-weight:700}
+.cktag-none{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.07)}
+.ret-det{background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:11px;padding:10px;margin-top:9px}
+.ret-det-title{font-size:11px;font-weight:900;color:#fdba74;margin-bottom:6px}
+.ret-det-sec{font-size:9px;letter-spacing:1px;color:rgba(249,115,22,0.6);text-transform:uppercase;margin:5px 0 3px}
+.ret-timer{font-size:10px;color:#fdba74;margin-top:2px}
+.ret-resolved{font-size:10px;color:#34d399;margin-top:2px;font-weight:700}
+.cambio-estado{margin-top:10px;padding:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:11px}
+.cambio-estado p{font-size:9px;color:var(--dim);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase}
+.cambio-btns{display:flex;gap:5px;flex-wrap:wrap}
+.cbtn{padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif}
+.cbtn-ok{background:rgba(52,211,153,0.2);color:#34d399}
+.cbtn-fail{background:rgba(248,113,113,0.2);color:#f87171}
+.cbtn-rev{background:rgba(251,191,36,0.2);color:#fbbf24}
+.add-ret-btn{width:100%;padding:9px;border-radius:10px;border:1px dashed rgba(249,115,22,0.4);background:rgba(249,115,22,0.05);color:#fdba74;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:9px}
+.add-ret-form{background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:11px;padding:11px;margin-top:9px;display:none}
+.hist-item{font-size:10px;color:rgba(255,255,255,0.4);padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.monday-badge{margin-top:10px;padding:8px 10px;background:rgba(110,231,183,0.07);border:1px dashed rgba(110,231,183,0.2);border-radius:10px}
+.monday-badge p:first-child{font-size:9px;color:var(--green);letter-spacing:1px}
+.monday-badge p:last-child{font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px}
+/* BADGES */
+.badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:99px;display:inline-block;white-space:nowrap}
+.b-ok{background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3)}
+.b-fail{background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)}
+.b-rev{background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)}
+.b-ret{background:rgba(249,115,22,0.2);color:#fdba74;border:1px solid rgba(249,115,22,0.4)}
+/* KPI */
+.kpi-tabs{display:flex;gap:5px;margin-bottom:11px;flex-wrap:wrap}
+.ktab{padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);font-size:10px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif}
+.ktab.active{border-color:var(--green);background:rgba(110,231,183,0.1);color:var(--green)}
+.month-bar{display:flex;gap:5px;margin-bottom:11px;overflow-x:auto;padding-bottom:3px}
+.mbtn{white-space:nowrap;padding:5px 11px;border-radius:99px;border:1px solid rgba(255,255,255,0.1);font-size:10px;cursor:pointer;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif}
+.mbtn.active{border-color:var(--blue);background:rgba(96,165,250,0.1);color:var(--blue);font-weight:700}
+.meta-line{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;background:rgba(110,231,183,0.05);border:1px solid rgba(110,231,183,0.15);border-radius:10px;margin-bottom:10px;font-size:11px}
+.meta-line span:last-child{color:var(--green);font-weight:900}
+.meta-line span:first-child{color:var(--dim)}
+.kpi-row{padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:6px}
+.kpi-row.alarm{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.3)}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.kpi-name{font-size:12px;font-weight:700}
+.kpi-sub{font-size:9px;color:var(--dim);margin-top:1px}
+.kpi-pct{font-size:16px;font-weight:900}
+.kpi-pct.good{color:#34d399}.kpi-pct.bad{color:#ef4444}
+.kpi-alarm-label{font-size:9px;color:#fca5a5;font-weight:700;margin-top:1px}
+.kpi-bar-wrap{height:5px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:5px}
+.kpi-bar-fill{height:100%;border-radius:99px}
+.kpi-bar-fill.good{background:linear-gradient(90deg,#34d399,#6ee7b7)}
+.kpi-bar-fill.bad{background:linear-gradient(90deg,#ef4444,#f87171)}
+.kpi-stats{display:flex;gap:8px;font-size:10px;color:var(--dim);flex-wrap:wrap}
+.kpi-stats span b{color:#fff;font-weight:700}
+.ret-kpi-row{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.2);border-radius:11px;margin-bottom:6px}
+.rki-name{font-size:12px;font-weight:700;color:#fdba74}
+.rki-sub{font-size:10px;color:var(--dim);margin-top:1px}
+.rki-count{font-size:17px;font-weight:900;color:var(--orange)}
+/* BONO */
+.bono-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:12px;margin-bottom:8px}
+.bono-card.cumple{background:rgba(52,211,153,0.07);border-color:rgba(52,211,153,0.2)}
+.bono-card.no-cumple{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.2)}
+.bono-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px}
+.bono-name{font-size:13px;font-weight:700}
+.bono-area{font-size:10px;color:var(--dim);margin-top:1px}
+.bono-pct-big{font-size:17px;font-weight:900;text-align:right}
+.bono-bar-wrap{height:8px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:6px;position:relative}
+.bono-bar{height:100%;border-radius:99px;transition:width .5s}
+.bono-meta-line{position:absolute;top:0;bottom:0;width:2px;background:#fff;opacity:.4}
+.bono-info{display:flex;justify-content:space-between;font-size:10px;color:var(--dim)}
+.bono-info b{color:#fff}
+.bono-config{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:12px;margin-bottom:12px}
+.bono-config-title{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;font-weight:700}
+.escala-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:11px}
+.escala-row input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:5px 8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;width:55px;text-align:center}
+.escala-row span{color:var(--dim)}
+.export-btn{width:100%;padding:11px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:900;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:7px}
+.page-title{font-weight:900;font-size:18px;margin-bottom:12px}
+.sec-title{font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:7px}
+.card{background:var(--glass);border:1px solid var(--border);border-radius:15px;padding:12px;margin-bottom:10px}
+.empty{text-align:center;padding:32px 0;color:rgba(255,255,255,0.25)}
+.empty .emo{font-size:38px;margin-bottom:7px}
+.no-data-month{text-align:center;padding:28px 0;color:rgba(255,255,255,0.2);font-size:12px}
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:200;align-items:center;justify-content:center;padding:16px}
+#lightbox.show{display:flex}
+#lightbox img{max-width:100%;max-height:90vh;border-radius:14px;object-fit:contain}
+#lb-close{position:absolute;top:18px;right:18px;width:33px;height:33px;border-radius:99px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:16px;cursor:pointer}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div>
-      <p>Control de</p>
-      <h1>Calidad <span>QC</span></h1>
-    </div>
-    <div class="header-icon">🔍</div>
+    <div><p>Control de</p><h1>Calidad <span>QC</span></h1></div>
+    <div class="hicon">🔍</div>
   </header>
-
   <div id="content">
 
     <!-- DASHBOARD -->
     <div id="tab-dashboard" class="tab-panel active">
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Total insp.</div><div class="stat-value" style="color:var(--green)" id="s-total">0</div><div class="stat-sub">inspecciones</div></div>
-        <div class="stat-card"><div class="stat-label">Tasa aprobación</div><div class="stat-value" style="color:var(--green)" id="s-tasa">0%</div><div class="stat-sub">del total</div></div>
-        <div class="stat-card"><div class="stat-label">Aprobados</div><div class="stat-value" style="color:#34d399" id="s-ok">0</div></div>
-        <div class="stat-card"><div class="stat-label">Rechazados</div><div class="stat-value" style="color:#f87171" id="s-fail">0</div></div>
-        <div class="stat-card"><div class="stat-label">En revisión</div><div class="stat-value" style="color:#fbbf24" id="s-rev">0</div></div>
-        <div class="stat-card"><div class="stat-label">Unidades</div><div class="stat-value" style="color:#60a5fa" id="s-units">0</div><div class="stat-sub">inspeccionadas</div></div>
-      </div>
-      <div id="dist-section" class="card" style="margin-bottom:16px;display:none">
-        <div class="section-title">Distribución</div>
-        <div class="dist-bar"><div id="bar-ok" style="background:linear-gradient(90deg,#34d399,#6ee7b7)"></div><div id="bar-fail" style="background:#f87171"></div><div id="bar-rev" style="background:#fbbf24"></div></div>
-        <div class="legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Aprobado</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Rechazado</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>En revisión</div>
+      <div class="dash-hero">
+        <div class="dash-hero-bg"></div>
+        <div class="dash-hero-content">
+          <div class="dash-hero-label">Tasa de aprobación global</div>
+          <div class="dash-hero-ring">
+            <svg viewBox="0 0 120 120" width="110" height="110">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="url(#ringGrad)" stroke-width="10"
+                stroke-dasharray="314" id="ring-dash" stroke-dashoffset="314"
+                stroke-linecap="round" transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .8s ease"/>
+              <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#6ee7b7"/><stop offset="100%" stop-color="#3b82f6"/>
+              </linearGradient></defs>
+              <text x="60" y="55" text-anchor="middle" fill="#fff" font-size="21" font-weight="900" font-family="DM Sans,sans-serif" id="ring-pct">0%</text>
+              <text x="60" y="71" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="9" font-family="DM Sans,sans-serif">META 90%</text>
+            </svg>
+          </div>
+          <div class="dash-hero-stats">
+            <div class="dash-hero-stat"><span class="dhs-val" id="s-total">0</span><span class="dhs-label">Total</span></div>
+            <div class="dash-hero-divider"></div>
+            <div class="dash-hero-stat"><span class="dhs-val" style="color:#34d399" id="s-ok">0</span><span class="dhs-label">Aprobados</span></div>
+            <div class="dash-hero-divider"></div>
+            <div class="dash-hero-stat"><span class="dhs-val" style="color:#f87171" id="s-fail">0</span><span class="dhs-label">Rechazados</span></div>
+          </div>
         </div>
       </div>
-      <div id="recent-section" style="display:none">
-        <div class="section-title">Recientes</div>
-        <div id="recent-list"></div>
+      <div class="dash-mini-row">
+        <div class="dash-mini" style="--mc:#fbbf24"><div class="dm-icon">🔄</div><div class="dm-val" id="s-rev">0</div><div class="dm-label">Revisión</div></div>
+        <div class="dash-mini" style="--mc:#f97316"><div class="dm-icon">🔧</div><div class="dm-val" id="s-ret">0</div><div class="dm-label">Retrabajos</div></div>
+        <div class="dash-mini" style="--mc:#6ee7b7"><div class="dm-icon">📅</div><div class="dm-val" id="s-mes">—</div><div class="dm-label">Este mes</div></div>
       </div>
-      <div id="empty-dash" class="empty">
-        <div class="emoji">📭</div>
-        <p>Sin inspecciones aún</p>
-        <button class="empty-btn" onclick="switchTab('nueva')">Nueva inspección</button>
+      <div id="dist-sec" style="display:none">
+        <div class="dash-dist-card">
+          <div class="dash-dist-title">Distribución de inspecciones</div>
+          <div class="dash-dist-bar">
+            <div id="bar-ok" class="dbar-ok" style="width:0%"><span id="bar-ok-pct"></span></div>
+            <div id="bar-fail" class="dbar-fail" style="width:0%"><span id="bar-fail-pct"></span></div>
+            <div id="bar-rev" class="dbar-rev" style="width:0%"><span id="bar-rev-pct"></span></div>
+          </div>
+          <div class="dash-legend">
+            <div class="dl-item"><div class="dl-dot" style="background:#34d399"></div><span>Aprobado</span></div>
+            <div class="dl-item"><div class="dl-dot" style="background:#f87171"></div><span>Rechazado</span></div>
+            <div class="dl-item"><div class="dl-dot" style="background:#fbbf24"></div><span>En revisión</span></div>
+          </div>
+        </div>
+      </div>
+      <div id="compare-sec" style="display:none">
+        <div class="compare-card">
+          <div class="compare-title">Comparativa mensual</div>
+          <div id="compare-rows"></div>
+        </div>
+      </div>
+      <div id="alarm-section"></div>
+      <div id="trend-section"></div>
+      <div id="recent-sec" style="display:none">
+        <div class="dash-section-title">Últimas inspecciones</div>
+        <div id="recent-list"></div>
+        <button class="dash-see-all" onclick="switchTab('registros')">Ver todos los registros →</button>
+      </div>
+      <div id="empty-dash" class="dash-empty">
+        <div class="dash-empty-icon">🔍</div>
+        <div class="dash-empty-title">Sin inspecciones aún</div>
+        <div class="dash-empty-sub">Comienza registrando tu primera inspección</div>
+        <button class="dash-empty-btn" onclick="switchTab('nueva')">+ Nueva inspección</button>
       </div>
     </div>
 
-    <!-- NUEVA -->
+    <!-- NUEVA — WIZARD 3 PASOS -->
     <div id="tab-nueva" class="tab-panel">
       <div class="page-title">Nueva inspección</div>
-      <div class="form-group">
-        <label class="form-label">Producto</label>
-        <input class="form-input" id="f-producto" placeholder="Nombre del producto">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Responsable</label>
-        <input class="form-input" id="f-responsable" placeholder="Tu nombre">
-      </div>
-      <div class="grid-2" style="margin-bottom:16px">
-        <div>
-          <label class="form-label">Fecha</label>
-          <input class="form-input" id="f-fecha" type="date">
-        </div>
-        <div>
-          <label class="form-label">Cantidad</label>
-          <input class="form-input" id="f-cantidad" type="number" placeholder="0">
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Estado</label>
-        <div class="estado-btns">
-          <button class="estado-btn" id="eb-ok" onclick="setEstado('Aprobado')">Aprobado</button>
-          <button class="estado-btn" id="eb-fail" onclick="setEstado('Rechazado')">Rechazado</button>
-          <button class="estado-btn" id="eb-rev" onclick="setEstado('En revisión')">En revisión</button>
-        </div>
+      <!-- Steps indicator -->
+      <div class="wizard-steps">
+        <div class="wstep active" id="ws-0" onclick="goStep(0)"><div class="wstep-circle" id="wc-0">1</div><div class="wstep-label">Datos</div></div>
+        <div class="wline" id="wl-0"></div>
+        <div class="wstep" id="ws-1" onclick="goStep(1)"><div class="wstep-circle" id="wc-1">2</div><div class="wstep-label">Checklist</div></div>
+        <div class="wline" id="wl-1"></div>
+        <div class="wstep" id="ws-2" onclick="goStep(2)"><div class="wstep-circle" id="wc-2">3</div><div class="wstep-label">Cierre</div></div>
       </div>
 
-      <!-- CHECKLIST -->
-      <div class="checklist-box">
-        <div class="checklist-header">
-          <div>
-            <div class="form-label" style="margin-bottom:4px">Checklist · Mueble Checkout</div>
-            <div id="ck-summary" style="font-size:12px;color:var(--text-dim)">0 ✓ · 0 ✕ · 16 pendientes</div>
+      <!-- PASO 1: DATOS -->
+      <div class="wizard-page active" id="wp-0">
+        <div class="fg"><label class="flabel">Área</label><select class="finput" id="f-area" onchange="updateOps('f-area','f-operario')"><option value="">Seleccionar área...</option></select></div>
+        <div class="fg"><label class="flabel">Operario</label><select class="finput" id="f-operario" onchange="checkStep1()"><option value="">Seleccionar operario...</option></select></div>
+        <div class="fg"><label class="flabel">Producto</label><input class="finput" id="f-producto" placeholder="Nombre del producto" oninput="checkStep1()"></div>
+        <div class="grid2" style="margin-bottom:11px">
+          <div><label class="flabel">Fecha</label><input class="finput" id="f-fecha" type="date" onchange="checkStep1()"></div>
+          <div><label class="flabel">Cantidad</label><input class="finput" id="f-cantidad" type="number" placeholder="0" oninput="checkStep1()"></div>
+        </div>
+        <div class="fg"><label class="flabel">Estado</label>
+          <div class="estado-btns">
+            <button class="ebtn" id="eb-ok" onclick="setEstado('Aprobado')">Aprobado</button>
+            <button class="ebtn" id="eb-fail" onclick="setEstado('Rechazado')">Rechazado</button>
+            <button class="ebtn" id="eb-rev" onclick="setEstado('En revisión')">En revisión</button>
           </div>
-          <div class="checklist-pct" id="ck-pct">0%</div>
         </div>
-        <div class="progress-bar"><div class="progress-fill" id="ck-bar" style="width:0%"></div></div>
-        <div id="checklist-rows"></div>
-      </div>
-
-      <!-- DEFECTOS -->
-      <div class="form-group">
-        <label class="form-label">Defectos encontrados</label>
-        <div class="defect-tags" id="defect-tags"></div>
-      </div>
-
-      <!-- COMENTARIOS -->
-      <div class="form-group">
-        <label class="form-label">Comentarios</label>
-        <textarea class="form-input" id="f-comentarios" rows="3" placeholder="Observaciones adicionales..."></textarea>
-      </div>
-
-      <!-- FOTOS -->
-      <div class="form-group">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <label class="form-label" style="margin:0">Fotos del producto final</label>
-          <span id="foto-count" style="font-size:11px;color:rgba(255,255,255,0.3)">0 foto(s)</span>
+        <div class="ret-box" id="ret-box">
+          <div class="ret-box-title">🔧 Retrabajo requerido</div>
+          <div class="ret-section">
+            <div class="ret-section-label">⚠️ Origen del daño (afecta métricas)</div>
+            <div class="fg"><label class="flabel">Área causante</label><select class="finput" id="r-causa-area" onchange="updateOps('r-causa-area','r-causa-op')"><option value="">Seleccionar...</option></select></div>
+            <div class="fg" style="margin-bottom:0"><label class="flabel">Operario responsable</label><select class="finput" id="r-causa-op"><option value="">Seleccionar...</option></select></div>
+          </div>
+          <div class="ret-section" style="margin-top:7px">
+            <div class="ret-section-label">🔨 Quién repara (no afecta métricas)</div>
+            <div class="fg"><label class="flabel">Área que repara</label><select class="finput" id="r-rep-area" onchange="updateOps('r-rep-area','r-rep-op')"><option value="">Seleccionar...</option></select></div>
+            <div class="fg" style="margin-bottom:0"><label class="flabel">Operario que repara</label><select class="finput" id="r-rep-op"><option value="">Seleccionar...</option></select></div>
+          </div>
+          <div class="fg" style="margin-top:7px;margin-bottom:0">
+            <label class="flabel">Descripción <span style="color:#f87171">*</span></label>
+            <textarea class="finput" id="r-desc" rows="2" placeholder="Obligatorio: ¿Qué debe corregirse?"></textarea>
+            <div class="req-warn" id="rdesc-warn">⚠️ La descripción es obligatoria</div>
+          </div>
         </div>
-        <label class="foto-label">
-          <span style="font-size:22px">📷</span> Añadir foto(s)
-          <input type="file" accept="image/*" multiple capture="environment" id="foto-input" style="display:none" onchange="handleFotos(this)">
-        </label>
-        <div class="foto-grid" id="foto-preview"></div>
+        <div class="wizard-nav">
+          <button class="wbtn-next" id="step1-next" onclick="goStep(1)" disabled>Siguiente → Checklist</button>
+        </div>
       </div>
 
-      <button class="submit-btn" id="submit-btn" onclick="guardarInspeccion()" disabled>Guardar inspección</button>
+      <!-- PASO 2: CHECKLIST -->
+      <div class="wizard-page" id="wp-1">
+        <div class="ck-box">
+          <div class="ck-header"><div><div class="flabel" style="margin-bottom:2px">Checklist · Mueble Checkout</div><div id="ck-summary" style="font-size:10px;color:var(--dim)">0 ✓ · 0 ✕ · 16 pendientes</div></div><div class="ck-pct" id="ck-pct">0%</div></div>
+          <div class="prog-bar"><div class="prog-fill" id="ck-bar" style="width:0%"></div></div>
+          <button class="ck-all-btn" onclick="aprobarTodo()">✓ Aprobar todos los ítems</button>
+          <div id="ck-rows"></div>
+        </div>
+        <div class="wizard-nav">
+          <button class="wbtn-prev" onclick="goStep(0)">← Atrás</button>
+          <button class="wbtn-next" onclick="goStep(2)">Siguiente → Cierre</button>
+        </div>
+      </div>
+
+      <!-- PASO 3: CIERRE -->
+      <div class="wizard-page" id="wp-2">
+        <div class="defect-section" id="defect-section"></div>
+        <div class="fg"><label class="flabel">Comentarios</label><textarea class="finput" id="f-comentarios" rows="2" placeholder="Observaciones..."></textarea></div>
+        <div class="fg">
+          <div style="display:flex;justify-content:space-between;align-items:center"><label class="flabel" style="margin:0">Fotos</label><span id="foto-count" style="font-size:10px;color:rgba(255,255,255,0.3)">0 foto(s)</span></div>
+          <label class="foto-label" id="foto-label-btn"><span style="font-size:17px">📷</span> Añadir foto(s)<input type="file" accept="image/*" multiple id="foto-input" style="display:none" onchange="handleFotos(this)"></label>
+          <div class="req-warn" id="foto-warn">⚠️ Foto obligatoria cuando el estado es Rechazado</div>
+          <div class="foto-grid" id="foto-preview"></div>
+        </div>
+        <div id="resumen-insp" style="background:rgba(110,231,183,0.05);border:1px solid rgba(110,231,183,0.15);border-radius:12px;padding:12px;margin-bottom:10px;font-size:11px;color:rgba(255,255,255,0.6)"></div>
+        <div class="wizard-nav">
+          <button class="wbtn-prev" onclick="goStep(1)">← Atrás</button>
+          <button class="wbtn-next" id="submit-btn" onclick="guardar()" disabled>✅ Guardar inspección</button>
+        </div>
+      </div>
     </div>
 
     <!-- REGISTROS -->
     <div id="tab-registros" class="tab-panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="page-title" style="margin:0">Registros</div>
-        <span id="reg-count" style="font-size:12px;color:var(--text-dim)">0 items</span>
+        <span id="reg-count" style="font-size:11px;color:var(--dim)">0 items</span>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar producto, operario, área..." oninput="renderRegistros()">
       </div>
       <div class="filtro-bar">
-        <button class="filtro-btn active" onclick="setFiltro('Todos',this)">Todos</button>
-        <button class="filtro-btn" onclick="setFiltro('Aprobado',this)">Aprobado</button>
-        <button class="filtro-btn" onclick="setFiltro('Rechazado',this)">Rechazado</button>
-        <button class="filtro-btn" onclick="setFiltro('En revisión',this)">En revisión</button>
+        <button class="fbtn active" onclick="setFiltro('Todos',this)">Todos</button>
+        <button class="fbtn" onclick="setFiltro('Aprobado',this)">✅ Ok</button>
+        <button class="fbtn" onclick="setFiltro('Rechazado',this)">❌ Rechazado</button>
+        <button class="fbtn" onclick="setFiltro('En revisión',this)">🔄 Revisión</button>
+        <button class="fbtn" onclick="setFiltro('Retrabajo',this)">🔧 Retrabajo</button>
       </div>
-      <div id="detalle-panel"></div>
+      <div id="det-panel"></div>
       <div id="reg-list"></div>
     </div>
 
-  </div><!-- /content -->
-</div><!-- /app -->
+    <!-- KPIs -->
+    <div id="tab-kpis" class="tab-panel">
+      <div class="page-title">KPIs</div>
+      <button class="export-btn" onclick="exportarExcel()">📊 Exportar reporte Excel</button>
+      <div class="meta-line"><span>Meta mínima de calidad</span><span>90% ✅</span></div>
+      <div class="kpi-tabs">
+        <button class="ktab active" id="kt-op" onclick="switchKpi('op',this)">Operario</button>
+        <button class="ktab" id="kt-area" onclick="switchKpi('area',this)">Área</button>
+        <button class="ktab" id="kt-ret" onclick="switchKpi('ret',this)">🔧 Retrabajos</button>
+        <button class="ktab" id="kt-bono" onclick="switchKpi('bono',this)">💰 Bono</button>
+      </div>
+      <div class="month-bar" id="month-bar"></div>
+      <div id="kpi-content"></div>
+    </div>
 
-<!-- BOTTOM NAV -->
-<nav>
-  <button class="active" onclick="switchTab('dashboard')" id="nav-dashboard">
-    <span class="icon">📊</span><span class="label">Dashboard</span><div class="dot"></div>
-  </button>
-  <button onclick="switchTab('nueva')" id="nav-nueva">
-    <span class="icon">➕</span><span class="label">Nueva</span><div class="dot"></div>
-  </button>
-  <button onclick="switchTab('registros')" id="nav-registros">
-    <span class="icon">📋</span><span class="label">Registros</span><div class="dot"></div>
-  </button>
-</nav>
-
-<!-- LIGHTBOX -->
-<div id="lightbox">
-  <img id="lightbox-img" src="" alt="foto">
-  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+  </div>
 </div>
 
+<nav>
+  <button class="active" onclick="switchTab('dashboard')" id="nav-dashboard"><span class="ni">📊</span><span class="nl">Dashboard</span><div class="nd"></div></button>
+  <button onclick="switchTab('nueva')" id="nav-nueva"><span class="ni">➕</span><span class="nl">Nueva</span><div class="nd"></div></button>
+  <button onclick="switchTab('registros')" id="nav-registros"><span class="ni">📋</span><span class="nl">Registros</span><div class="nd"></div></button>
+  <button onclick="switchTab('kpis')" id="nav-kpis"><span class="ni">📈</span><span class="nl">KPIs</span><div class="nd"></div></button>
+</nav>
+
+<div id="lightbox"><img id="lb-img" src="" alt=""><button id="lb-close" onclick="closeLB()">✕</button></div>
+
 <script>
-const CHECKLIST = [
-  "Cubierta","Tapacantos","Bandejas","Costillas","Rejilla",
-  "Barras","Ranuras","Flejera","TDA","LEDs",
-  "Difusores","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"
+const META = 90;
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+const AREAS = {
+  "Madera":["Luis","Claudio","Miguel","Alfonso","Guillermo","Hernan","Leo"],
+  "Acrílico":["Katherin"],
+  "Empalque":["Carlos R","Juan Eduardo Coloma"],
+  "Impresión Digital Cama Plana":["David D","Andres G"],
+  "Laser":["Angel B"],
+  "Impresión Digital Plotter":["Juan Pablo M"],
+  "Soldadura":["Ysrael M","Jesús","Eduardo C"],
+  "Pintura":["Jose M","Carlos"],
+  "Instaladores":["Instalador 1","Instalador 2","Instalador 3"],
+  "Electricidad":["Gerardo (Jefe de área)","Jose Zenteno","Alejandro Lopez","Luis"]
+};
+
+// Defects by area with severity
+const DEFECTOS_AREA = {
+  "Madera":{
+    critico:["Estructura rota","Dimensiones incorrectas","Madera rajada"],
+    mayor:["Acabado irregular","Uniones flojas","Lijado deficiente"],
+    menor:["Marca de herramienta","Pequeña astilla","Color irregular"]
+  },
+  "Acrílico":{
+    critico:["Acrílico roto","Dimensiones incorrectas"],
+    mayor:["Acrílico rayado","Burbujas en pegado","Corte irregular"],
+    menor:["Pequeño rasguño","Borde áspero"]
+  },
+  "Empalque":{
+    critico:["Producto dañado en embalaje","Faltante de piezas"],
+    mayor:["Embalaje incorrecto","Etiqueta equivocada"],
+    menor:["Embalaje sucio","Cinta mal aplicada"]
+  },
+  "Impresión Digital Cama Plana":{
+    critico:["Impresión incorrecta","Color completamente errado","Imagen borrosa"],
+    mayor:["Desalineación de imagen","Color levemente errado"],
+    menor:["Pequeña mancha","Borde de impresión irregular"]
+  },
+  "Laser":{
+    critico:["Corte incompleto","Grabado en posición incorrecta"],
+    mayor:["Corte irregular","Profundidad de grabado incorrecta"],
+    menor:["Pequeña quemadura extra","Residuo de corte"]
+  },
+  "Impresión Digital Plotter":{
+    critico:["Impresión en material incorrecto","Color completamente errado"],
+    mayor:["Desalineación","Banding visible"],
+    menor:["Pequeña mancha","Borde irregular"]
+  },
+  "Soldadura":{
+    critico:["Soldadura rota","Estructura débil","Dimensiones incorrectas"],
+    mayor:["Soldadura irregular","Falta de penetración","Porosidad"],
+    menor:["Escoria residual","Acabado áspero"]
+  },
+  "Pintura":{
+    critico:["Color completamente incorrecto","Pintura desprendida"],
+    mayor:["Chorreo de pintura","Cobertura incompleta","Burbujas"],
+    menor:["Pequeña mancha","Polvo atrapado","Textura irregular"]
+  },
+  "Instaladores":{
+    critico:["Mueble dañado en instalación","Pieza rota"],
+    mayor:["Instalación desnivelada","Tornillos faltantes","Rayón profundo"],
+    menor:["Pequeño rayón","Marca de herramienta","Suciedad"]
+  },
+  "Electricidad":{
+    critico:["Cableado incorrecto","Cortocircuito","Sin funcionamiento"],
+    mayor:["Cableado desordenado","Conexión suelta","Enchufe mal posicionado"],
+    menor:["Cable visible","Etiqueta faltante"]
+  }
+};
+
+const DEFECTOS_GENERAL = {
+  critico:["Daño estructural grave","Dimensiones incorrectas","No funciona"],
+  mayor:["Acabado deficiente","Piezas sueltas","Color incorrecto"],
+  menor:["Marca leve","Suciedad","Detalle estético menor"]
+};
+
+// Bonus scale (configurable)
+let bonoEscala = [
+  {min:90, max:100, pct:100, label:"Meta cumplida"},
+  {min:80, max:89, pct:80, label:"Cerca de la meta"},
+  {min:70, max:79, pct:60, label:"Por debajo"},
+  {min:60, max:69, pct:40, label:"Deficiente"},
+  {min:0,  max:59, pct:0,  label:"Sin bono"}
 ];
-const DEFECTS = ["Daño físico","Error de etiquetado","Contaminación","Medidas incorrectas","Color incorrecto","Otro"];
 
-let registros = [];
-let currentTab = 'dashboard';
-let filtro = 'Todos';
-let detalleId = null;
-let formFotos = [];
-let formChecklist = {};
-let formDefectos = [];
-let formEstado = '';
+let registros = [], kpiTab = 'op', filtro = 'Todos', detalleId = null;
+let formFotos = [], formChecklist = {}, formDefectos = [], formEstado = '';
+let selectedMonth = 'all', wizardStep = 0;
 
-// Init
-try { registros = JSON.parse(localStorage.getItem('qc_registros') || '[]'); } catch {}
+try {
+  // Migrate from any previous version
+  const v5 = localStorage.getItem('qc_v5');
+  const v4 = localStorage.getItem('qc_v4');
+  const v3 = localStorage.getItem('qc_v3');
+  const v2 = localStorage.getItem('qc_v2');
+  const v1 = localStorage.getItem('qc_registros');
+
+  if(v5) {
+    registros = JSON.parse(v5);
+  } else if(v4) {
+    registros = JSON.parse(v4);
+    // Migrate defectos from string array to object array
+    registros = registros.map(r=>({
+      ...r,
+      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
+    }));
+    localStorage.setItem('qc_v5', JSON.stringify(registros));
+    localStorage.removeItem('qc_v4');
+    console.log('Migrado desde v4');
+  } else if(v3) {
+    registros = JSON.parse(v3);
+    registros = registros.map(r=>({
+      ...r,
+      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
+    }));
+    localStorage.setItem('qc_v5', JSON.stringify(registros));
+    localStorage.removeItem('qc_v3');
+    console.log('Migrado desde v3');
+  } else if(v2) {
+    registros = JSON.parse(v2);
+    registros = registros.map(r=>({
+      ...r,
+      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
+    }));
+    localStorage.setItem('qc_v5', JSON.stringify(registros));
+    localStorage.removeItem('qc_v2');
+    console.log('Migrado desde v2');
+  } else if(v1) {
+    registros = JSON.parse(v1);
+    registros = registros.map(r=>({
+      ...r,
+      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
+    }));
+    localStorage.setItem('qc_v5', JSON.stringify(registros));
+    localStorage.removeItem('qc_registros');
+    console.log('Migrado desde v1');
+  }
+} catch(e) { registros = []; }
+const CHECKLIST = ["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"];
 CHECKLIST.forEach(k => formChecklist[k] = null);
 document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
-buildChecklist();
-buildDefects();
-renderDashboard();
-renderRegistros();
 
-function save() {
-  try { localStorage.setItem('qc_registros', JSON.stringify(registros)); } catch {}
+// Populate selects
+['f-area','r-causa-area','r-rep-area'].forEach(id => {
+  const sel = document.getElementById(id);
+  Object.keys(AREAS).forEach(a => { const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o); });
+});
+buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar();
+
+function save(){ try{localStorage.setItem('qc_v5',JSON.stringify(registros));}catch{} }
+
+function switchTab(t){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('nav-'+t).classList.add('active');
+  if(t==='dashboard') renderDashboard();
+  if(t==='registros') renderRegistros();
+  if(t==='kpis'){ buildMonthBar(); renderKpis(); }
+  if(t==='nueva'){ wizardStep=0; goStep(0,true); }
 }
 
-function switchTab(tab) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('nav-' + tab).classList.add('active');
-  currentTab = tab;
-  if (tab === 'dashboard') renderDashboard();
-  if (tab === 'registros') renderRegistros();
-}
-
-function badgeClass(estado) {
-  if (estado === 'Aprobado') return 'badge badge-ok';
-  if (estado === 'Rechazado') return 'badge badge-fail';
-  return 'badge badge-rev';
-}
-
-// DASHBOARD
-function renderDashboard() {
-  const total = registros.length;
-  const ok = registros.filter(r => r.estado === 'Aprobado').length;
-  const fail = registros.filter(r => r.estado === 'Rechazado').length;
-  const rev = registros.filter(r => r.estado === 'En revisión').length;
-  const units = registros.reduce((a, r) => a + Number(r.cantidad || 0), 0);
-  const tasa = total ? Math.round((ok / total) * 100) : 0;
-
-  document.getElementById('s-total').textContent = total;
-  document.getElementById('s-tasa').textContent = tasa + '%';
-  document.getElementById('s-ok').textContent = ok;
-  document.getElementById('s-fail').textContent = fail;
-  document.getElementById('s-rev').textContent = rev;
-  document.getElementById('s-units').textContent = units;
-
-  const hasData = total > 0;
-  document.getElementById('dist-section').style.display = hasData ? 'block' : 'none';
-  document.getElementById('recent-section').style.display = hasData ? 'block' : 'none';
-  document.getElementById('empty-dash').style.display = hasData ? 'none' : 'block';
-
-  if (hasData) {
-    document.getElementById('bar-ok').style.width = tasa + '%';
-    document.getElementById('bar-fail').style.width = Math.round((fail/total)*100) + '%';
-    document.getElementById('bar-rev').style.width = Math.round((rev/total)*100) + '%';
-
-    const rl = document.getElementById('recent-list');
-    rl.innerHTML = registros.slice(0,3).map(r => `
-      <div class="recent-item" onclick="switchTab('registros');showDetalle('${r.id}')">
-        <div><div class="recent-name">${r.producto}</div><div class="recent-meta">${r.responsable} · ${r.fecha}</div></div>
-        <span class="${badgeClass(r.estado)}">${r.estado}</span>
-      </div>`).join('');
+// ── WIZARD
+function goStep(step, force=false){
+  if(step>wizardStep && !force){
+    if(step===1 && !canGoStep1()) return;
   }
-}
-
-// CHECKLIST BUILDER
-function buildChecklist() {
-  const cont = document.getElementById('checklist-rows');
-  cont.innerHTML = CHECKLIST.map(item => `
-    <div class="checklist-row" id="ckrow-${CSS.escape(item)}">
-      <span class="checklist-name">${item}</span>
-      <div class="ck-btns">
-        <button class="ck-btn" id="ckb-ok-${CSS.escape(item)}" onclick="setCk('${item}',true)">✓</button>
-        <button class="ck-btn" id="ckb-fail-${CSS.escape(item)}" onclick="setCk('${item}',false)">✕</button>
-      </div>
-    </div>`).join('');
-}
-
-function CSS_escape(str) { return str.replace(/[^a-zA-Z0-9-_]/g, '_'); }
-
-function buildChecklist() {
-  const cont = document.getElementById('checklist-rows');
-  cont.innerHTML = CHECKLIST.map((item, i) => `
-    <div class="checklist-row" id="ckrow-${i}">
-      <span class="checklist-name">${item}</span>
-      <div class="ck-btns">
-        <button class="ck-btn" id="ckb-ok-${i}" onclick="setCk(${i},true)">✓</button>
-        <button class="ck-btn" id="ckb-fail-${i}" onclick="setCk(${i},false)">✕</button>
-      </div>
-    </div>`).join('');
-}
-
-function setCk(idx, val) {
-  const item = CHECKLIST[idx];
-  const current = formChecklist[item];
-  formChecklist[item] = current === val ? null : val;
-  updateCkRow(idx);
-  updateCkProgress();
-  checkSubmit();
-}
-
-function updateCkRow(idx) {
-  const item = CHECKLIST[idx];
-  const v = formChecklist[item];
-  const row = document.getElementById('ckrow-' + idx);
-  row.className = 'checklist-row' + (v === true ? ' ck-ok' : v === false ? ' ck-fail' : '');
-  const okBtn = document.getElementById('ckb-ok-' + idx);
-  const failBtn = document.getElementById('ckb-fail-' + idx);
-  okBtn.className = 'ck-btn' + (v === true ? ' ck-btn-ok' : '');
-  failBtn.className = 'ck-btn' + (v === false ? ' ck-btn-fail' : '');
-}
-
-function updateCkProgress() {
-  const vals = Object.values(formChecklist);
-  const ok = vals.filter(v => v === true).length;
-  const fail = vals.filter(v => v === false).length;
-  const total = CHECKLIST.length;
-  const pct = Math.round(((ok + fail) / total) * 100);
-  document.getElementById('ck-pct').textContent = pct + '%';
-  document.getElementById('ck-bar').style.width = pct + '%';
-  document.getElementById('ck-summary').textContent = `${ok} ✓ · ${fail} ✕ · ${total - ok - fail} pendientes`;
-}
-
-// DEFECTS
-function buildDefects() {
-  const cont = document.getElementById('defect-tags');
-  cont.innerHTML = DEFECTS.map((d, i) => `
-    <button class="defect-tag" id="dtag-${i}" onclick="toggleDefect(${i})">${d}</button>`).join('');
-}
-
-function toggleDefect(idx) {
-  const d = DEFECTS[idx];
-  const btn = document.getElementById('dtag-' + idx);
-  if (formDefectos.includes(d)) {
-    formDefectos = formDefectos.filter(x => x !== d);
-    btn.classList.remove('active');
-  } else {
-    formDefectos.push(d);
-    btn.classList.add('active');
-  }
-}
-
-// ESTADO
-function setEstado(e) {
-  formEstado = e;
-  document.getElementById('eb-ok').className = 'estado-btn' + (e === 'Aprobado' ? ' ok' : '');
-  document.getElementById('eb-fail').className = 'estado-btn' + (e === 'Rechazado' ? ' fail' : '');
-  document.getElementById('eb-rev').className = 'estado-btn' + (e === 'En revisión' ? ' rev' : '');
-  checkSubmit();
-}
-
-// FOTOS
-function handleFotos(input) {
-  Array.from(input.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      formFotos.push(ev.target.result);
-      renderFotoPreview();
-    };
-    reader.readAsDataURL(file);
+  wizardStep = step;
+  document.querySelectorAll('.wizard-page').forEach((p,i)=>p.className='wizard-page'+(i===step?' active':''));
+  [0,1,2].forEach(i=>{
+    const ws=document.getElementById('ws-'+i);
+    const wc=document.getElementById('wc-'+i);
+    if(i<step){ ws.className='wstep done'; wc.textContent='✓'; }
+    else if(i===step){ ws.className='wstep active'; wc.textContent=i+1; }
+    else{ ws.className='wstep'; wc.textContent=i+1; }
   });
-  input.value = '';
+  [0,1].forEach(i=>{
+    const wl=document.getElementById('wl-'+i);
+    wl.className='wline'+(i<step?' done':'');
+  });
+  if(step===2) updateResumen();
+  const area=document.getElementById('f-area').value;
+  if(step===2) buildDefects(area);
 }
 
-function renderFotoPreview() {
-  document.getElementById('foto-count').textContent = formFotos.length + ' foto(s)';
-  document.getElementById('foto-preview').innerHTML = formFotos.map((src, i) => `
-    <div class="foto-item">
-      <img src="${src}" onclick="openLightbox('${src}')">
-      <button class="foto-remove" onclick="removeFoto(${i})">✕</button>
+function canGoStep1(){
+  return document.getElementById('f-area').value && document.getElementById('f-operario').value &&
+    document.getElementById('f-producto').value.trim() && document.getElementById('f-cantidad').value && formEstado;
+}
+
+function checkStep1(){
+  const ok=canGoStep1();
+  document.getElementById('step1-next').disabled=!ok;
+  checkSubmit();
+}
+
+function updateResumen(){
+  const el=document.getElementById('resumen-insp');
+  const area=document.getElementById('f-area').value||'—';
+  const op=document.getElementById('f-operario').value||'—';
+  const prod=document.getElementById('f-producto').value||'—';
+  const ckVals=Object.values(formChecklist);
+  const okC=ckVals.filter(v=>v===true).length, failC=ckVals.filter(v=>v===false).length;
+  el.innerHTML=`<div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;font-weight:700">Resumen de inspección</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+      <span style="color:var(--dim)">Producto:</span><span>${prod}</span>
+      <span style="color:var(--dim)">Operario:</span><span>${op}</span>
+      <span style="color:var(--dim)">Área:</span><span>${area}</span>
+      <span style="color:var(--dim)">Estado:</span><span>${formEstado||'—'}</span>
+      <span style="color:var(--dim)">Checklist:</span><span style="color:#34d399">${okC}✓</span>
+    </div>`;
+  checkSubmit();
+}
+
+function updateOps(areaId, opId){
+  const area=document.getElementById(areaId).value;
+  const sel=document.getElementById(opId);
+  sel.innerHTML='<option value="">Seleccionar...</option>';
+  if(area&&AREAS[area]) AREAS[area].forEach(op=>{const o=document.createElement('option');o.value=op;o.textContent=op;sel.appendChild(o);});
+  if(areaId==='f-area'){ checkStep1(); buildDefects(area); }
+}
+
+function bclass(e){ return e==='Aprobado'?'badge b-ok':e==='Rechazado'?'badge b-fail':'badge b-rev'; }
+
+// ── CHECKLIST
+function buildChecklist(){
+  document.getElementById('ck-rows').innerHTML=CHECKLIST.map((item,i)=>`
+    <div class="ck-row" id="ckr-${i}"><span class="ck-name">${item}</span>
+      <div class="ckbtns"><button class="ckb" id="ckbok-${i}" onclick="setCk(${i},true)">✓</button><button class="ckb" id="ckbf-${i}" onclick="setCk(${i},false)">✕</button></div>
     </div>`).join('');
 }
 
-function removeFoto(idx) {
-  formFotos.splice(idx, 1);
-  renderFotoPreview();
+function aprobarTodo(){
+  CHECKLIST.forEach((_,i)=>{
+    formChecklist[CHECKLIST[i]]=true;
+    document.getElementById('ckr-'+i).className='ck-row cok';
+    document.getElementById('ckbok-'+i).className='ckb bok';
+    document.getElementById('ckbf-'+i).className='ckb';
+  });
+  document.getElementById('ck-pct').textContent='100%';
+  document.getElementById('ck-bar').style.width='100%';
+  document.getElementById('ck-summary').textContent=`${CHECKLIST.length} ✓ · 0 ✕ · 0 pendientes`;
 }
 
-// LIGHTBOX
-function openLightbox(src) {
-  document.getElementById('lightbox-img').src = src;
-  document.getElementById('lightbox').classList.add('show');
-}
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('show');
+function setCk(i,val){
+  const item=CHECKLIST[i]; formChecklist[item]=formChecklist[item]===val?null:val;
+  const v=formChecklist[item];
+  document.getElementById('ckr-'+i).className='ck-row'+(v===true?' cok':v===false?' cfail':'');
+  document.getElementById('ckbok-'+i).className='ckb'+(v===true?' bok':'');
+  document.getElementById('ckbf-'+i).className='ckb'+(v===false?' bfail':'');
+  const vals=Object.values(formChecklist),ok=vals.filter(v=>v===true).length,fail=vals.filter(v=>v===false).length,tot=CHECKLIST.length,pct=Math.round(((ok+fail)/tot)*100);
+  document.getElementById('ck-pct').textContent=pct+'%';
+  document.getElementById('ck-bar').style.width=pct+'%';
+  document.getElementById('ck-summary').textContent=`${ok} ✓ · ${fail} ✕ · ${tot-ok-fail} pendientes`;
 }
 
-// SUBMIT
-function checkSubmit() {
-  const ok = document.getElementById('f-producto').value.trim() &&
-             document.getElementById('f-responsable').value.trim() &&
-             document.getElementById('f-cantidad').value.trim() &&
-             formEstado;
-  document.getElementById('submit-btn').disabled = !ok;
+// ── DEFECTS BY AREA WITH SEVERITY
+function buildDefects(area){
+  const def = (area && DEFECTOS_AREA[area]) ? DEFECTOS_AREA[area] : DEFECTOS_GENERAL;
+  const sec = document.getElementById('defect-section');
+  sec.innerHTML=`<div class="flabel" style="margin-bottom:8px">Defectos encontrados</div>`;
+  ['critico','mayor','menor'].forEach(sev=>{
+    const labels={critico:'🔴 Crítico',mayor:'🟠 Mayor',menor:'🟡 Menor'};
+    const items=def[sev]||[];
+    sec.innerHTML+=`<div class="sev-group">
+      <div class="sev-label sev-${sev}">${labels[sev]}</div>
+      <div class="defect-tags">${items.map((d,i)=>`<button class="dtag" id="dt-${sev}-${i}" onclick="toggleDef('${sev}','${d.replace(/'/g,'')}')">${d}</button>`).join('')}</div>
+    </div>`;
+  });
 }
-document.getElementById('f-producto').addEventListener('input', checkSubmit);
-document.getElementById('f-responsable').addEventListener('input', checkSubmit);
-document.getElementById('f-cantidad').addEventListener('input', checkSubmit);
 
-function guardarInspeccion() {
-  const nuevo = {
-    id: Date.now().toString(),
-    producto: document.getElementById('f-producto').value.trim(),
-    responsable: document.getElementById('f-responsable').value.trim(),
-    fecha: document.getElementById('f-fecha').value,
-    cantidad: document.getElementById('f-cantidad').value,
-    estado: formEstado,
-    checklist: { ...formChecklist },
-    defectos: [...formDefectos],
-    comentarios: document.getElementById('f-comentarios').value,
-    fotos: [...formFotos],
-    creado: new Date().toISOString(),
+function toggleDef(sev, d){
+  const existing = formDefectos.find(x=>x.nombre===d);
+  if(existing){
+    formDefectos = formDefectos.filter(x=>x.nombre!==d);
+    // remove active class
+    document.querySelectorAll('.dtag').forEach(btn=>{if(btn.textContent===d)btn.className='dtag';});
+  } else {
+    formDefectos.push({nombre:d, severidad:sev});
+    document.querySelectorAll('.dtag').forEach(btn=>{if(btn.textContent===d)btn.className=`dtag active-${sev}`;});
+  }
+}
+
+function setEstado(e){
+  formEstado=e;
+  document.getElementById('eb-ok').className='ebtn'+(e==='Aprobado'?' ok':'');
+  document.getElementById('eb-fail').className='ebtn'+(e==='Rechazado'?' fail':'');
+  document.getElementById('eb-rev').className='ebtn'+(e==='En revisión'?' rev':'');
+  document.getElementById('ret-box').className='ret-box'+(e!=='Aprobado'?' show':'');
+  checkStep1(); checkSubmit();
+}
+
+function handleFotos(input){
+  Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=ev=>{formFotos.push(ev.target.result);renderFotos();};r.readAsDataURL(f);});
+  input.value=''; checkSubmit();
+}
+function renderFotos(){
+  document.getElementById('foto-count').textContent=formFotos.length+' foto(s)';
+  document.getElementById('foto-preview').innerHTML=formFotos.map((s,i)=>`<div class="foto-item"><img src="${s}" onclick="openLB('${s}')"><button class="foto-rm" onclick="rmFoto(${i})">✕</button></div>`).join('');
+}
+function rmFoto(i){formFotos.splice(i,1);renderFotos();checkSubmit();}
+function openLB(s){document.getElementById('lb-img').src=s;document.getElementById('lightbox').classList.add('show');}
+function closeLB(){document.getElementById('lightbox').classList.remove('show');}
+
+function checkSubmit(){
+  const fotoOk=formEstado!=='Rechazado'||formFotos.length>0;
+  const fl=document.getElementById('foto-label-btn'), fw=document.getElementById('foto-warn');
+  if(fl){ fl.className='foto-label'+(formEstado==='Rechazado'&&!formFotos.length?' foto-required':''); }
+  if(fw){ fw.className='req-warn'+(formEstado==='Rechazado'&&!formFotos.length?' show':''); }
+  const ok=canGoStep1()&&fotoOk;
+  document.getElementById('submit-btn').disabled=!ok;
+}
+
+function buildRetrabajo(){
+  const cA=document.getElementById('r-causa-area').value, cO=document.getElementById('r-causa-op').value;
+  const rA=document.getElementById('r-rep-area').value, rO=document.getElementById('r-rep-op').value;
+  const desc=document.getElementById('r-desc').value.trim();
+  const warn=document.getElementById('rdesc-warn');
+  if((cA||cO)&&!desc){warn.className='req-warn show';return 'ERROR';}
+  if(warn) warn.className='req-warn';
+  if(!cA&&!cO&&!desc) return null;
+  return{causaArea:cA,causaOp:cO,repArea:rA,repOp:rO,descripcion:desc,fecha:new Date().toISOString(),fechaResolucion:null,postEntrega:false};
+}
+
+function guardar(){
+  const ret=formEstado!=='Aprobado'?buildRetrabajo():null;
+  if(ret==='ERROR') return;
+  const nuevo={
+    id:Date.now().toString(),
+    area:document.getElementById('f-area').value,
+    operario:document.getElementById('f-operario').value,
+    producto:document.getElementById('f-producto').value.trim(),
+    fecha:document.getElementById('f-fecha').value,
+    cantidad:document.getElementById('f-cantidad').value,
+    estado:formEstado,
+    retrabajos:ret?[ret]:[],
+    checklist:{...formChecklist},
+    defectos:[...formDefectos],
+    comentarios:document.getElementById('f-comentarios').value,
+    fotos:[...formFotos],
+    historial:[{estado:formEstado,fecha:new Date().toISOString(),nota:'Registro inicial'}],
+    creado:new Date().toISOString()
   };
-  registros.unshift(nuevo);
-  save();
-
-  // Reset form
-  document.getElementById('f-producto').value = '';
-  document.getElementById('f-responsable').value = '';
-  document.getElementById('f-cantidad').value = '';
-  document.getElementById('f-comentarios').value = '';
-  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
-  formEstado = '';
-  formDefectos = [];
-  formFotos = [];
-  CHECKLIST.forEach(k => formChecklist[k] = null);
+  registros.unshift(nuevo); save();
+  // Reset
+  ['f-area','f-operario','r-causa-area','r-causa-op','r-rep-area','r-rep-op'].forEach(id=>document.getElementById(id).value='');
+  ['f-operario','r-causa-op','r-rep-op'].forEach(id=>{document.getElementById(id).innerHTML='<option value="">Seleccionar...</option>';});
+  ['f-producto','f-cantidad','f-comentarios','r-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+  formEstado=''; formDefectos=[]; formFotos=[];
+  CHECKLIST.forEach(k=>formChecklist[k]=null);
   setEstado('');
-  DEFECTS.forEach((_, i) => document.getElementById('dtag-' + i).classList.remove('active'));
-  CHECKLIST.forEach((_, i) => updateCkRow(i));
-  updateCkProgress();
-  renderFotoPreview();
-  document.getElementById('submit-btn').disabled = true;
-
-  const btn = document.getElementById('submit-btn');
-  btn.textContent = '✅ Guardado!';
-  setTimeout(() => { btn.textContent = 'Guardar inspección'; }, 2000);
-
+  CHECKLIST.forEach((_,i)=>{document.getElementById('ckr-'+i).className='ck-row';document.getElementById('ckbok-'+i).className='ckb';document.getElementById('ckbf-'+i).className='ckb';});
+  document.getElementById('ck-pct').textContent='0%';
+  document.getElementById('ck-bar').style.width='0%';
+  document.getElementById('ck-summary').textContent='0 ✓ · 0 ✕ · 16 pendientes';
+  renderFotos(); document.getElementById('submit-btn').disabled=true;
+  document.getElementById('ret-box').className='ret-box';
+  buildDefects('');
+  const btn=document.getElementById('submit-btn');btn.textContent='✅ Guardado!';
+  setTimeout(()=>{btn.textContent='✅ Guardar inspección';},2000);
   switchTab('registros');
 }
 
-// REGISTROS
-function setFiltro(f, btn) {
-  filtro = f;
-  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderRegistros();
+// ── DASHBOARD
+function getMonthKey(d){if(!d)return'';const dt=new Date(d+'T00:00:00');return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;}
+function getMonthLabel(k){if(!k)return'';const[y,m]=k.split('-');return`${MESES[parseInt(m)-1]} ${y}`;}
+
+function renderDashboard(){
+  const tot=registros.length, ok=registros.filter(r=>r.estado==='Aprobado').length;
+  const fail=registros.filter(r=>r.estado==='Rechazado').length, rev=registros.filter(r=>r.estado==='En revisión').length;
+  const ret=registros.filter(r=>r.retrabajos&&r.retrabajos.length).length;
+  const tasa=tot?Math.round((ok/tot)*100):0;
+  const circ=314, offset=circ-(circ*(tasa/100));
+  const ring=document.getElementById('ring-dash');
+  if(ring){ring.style.strokeDashoffset=offset;ring.setAttribute('stroke',tasa>=90?'url(#ringGrad)':tasa>=75?'#fbbf24':'#f87171');}
+  const rp=document.getElementById('ring-pct');if(rp)rp.textContent=tasa+'%';
+  document.getElementById('s-total').textContent=tot;
+  document.getElementById('s-ok').textContent=ok;
+  document.getElementById('s-fail').textContent=fail;
+  document.getElementById('s-rev').textContent=rev;
+  document.getElementById('s-ret').textContent=ret;
+  const nowM=new Date().toISOString().slice(0,7);
+  const smEl=document.getElementById('s-mes');if(smEl)smEl.textContent=registros.filter(r=>r.fecha&&r.fecha.startsWith(nowM)).length;
+  const has=tot>0;
+  document.getElementById('dist-sec').style.display=has?'block':'none';
+  document.getElementById('compare-sec').style.display=has?'block':'none';
+  document.getElementById('recent-sec').style.display=has?'block':'none';
+  document.getElementById('empty-dash').style.display=has?'none':'block';
+  if(has){
+    const okP=tasa,failP=Math.round((fail/tot)*100),revP=Math.round((rev/tot)*100);
+    document.getElementById('bar-ok').style.width=okP+'%';
+    document.getElementById('bar-fail').style.width=failP+'%';
+    document.getElementById('bar-rev').style.width=revP+'%';
+    const bop=document.getElementById('bar-ok-pct');if(bop)bop.textContent=okP>12?okP+'%':'';
+    const bfp=document.getElementById('bar-fail-pct');if(bfp)bfp.textContent=failP>12?failP+'%':'';
+    const brp=document.getElementById('bar-rev-pct');if(brp)brp.textContent=revP>12?revP+'%':'';
+    // Monthly compare
+    const months=[...new Set(registros.map(r=>getMonthKey(r.fecha)))].filter(Boolean).sort().reverse().slice(0,4);
+    let prevPct=null;
+    const compareRows=months.map(m=>{
+      const mData=registros.filter(r=>getMonthKey(r.fecha)===m);
+      const mOk=mData.filter(r=>r.estado==='Aprobado').length;
+      const mPct=mData.length?Math.round((mOk/mData.length)*100):0;
+      const delta=prevPct!==null?mPct-prevPct:null;
+      const color=mPct>=90?'#34d399':mPct>=75?'#fbbf24':'#f87171';
+      const deltaHtml=delta!==null?`<span class="compare-delta" style="color:${delta>0?'#34d399':delta<0?'#f87171':'var(--dim)'}">${delta>0?'+':''}${delta}%</span>`:'<span class="compare-delta"></span>';
+      prevPct=mPct;
+      return`<div class="compare-row">
+        <span class="compare-month">${getMonthLabel(m).split(' ')[0]}</span>
+        <div class="compare-bar-wrap"><div class="compare-bar" style="width:${mPct}%;background:${color}"><span class="compare-pct">${mPct}%</span></div></div>
+        ${deltaHtml}
+      </div>`;
+    }).join('');
+    document.getElementById('compare-rows').innerHTML=compareRows;
+    document.getElementById('recent-list').innerHTML=registros.slice(0,4).map(r=>`
+      <div class="dash-recent-item${r.retrabajos?.length?' has-ret':''}" onclick="switchTab('registros');showDet('${r.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div class="dri-name">${r.producto}</div><div class="dri-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha}</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+            <span class="${bclass(r.estado)}">${r.estado}</span>
+            ${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+  // Trends
+  const trendMap={};
+  [...registros].reverse().forEach(r=>{
+    const k=r.operario||'Sin asignar';
+    if(!trendMap[k])trendMap[k]={streak:0,area:r.area||''};
+    if(r.estado!=='Aprobado')trendMap[k].streak++;else trendMap[k].streak=0;
+  });
+  const trending=Object.entries(trendMap).filter(([,d])=>d.streak>=3);
+  const ts=document.getElementById('trend-section');
+  if(ts)ts.innerHTML=trending.length?`<div class="trend-banner"><h3>⚡ Tendencia negativa</h3>${trending.map(([n,d])=>`<div class="trend-item"><div><div class="trend-name">${n}</div><div style="font-size:9px;color:rgba(255,255,255,0.3)">${d.area}</div></div><div class="trend-streak">${d.streak} seguidos ⚠️</div></div>`).join('')}</div>`:'';
+  // Alarms
+  const ops={};
+  registros.forEach(r=>{const k=r.operario||'Sin asignar';if(!ops[k])ops[k]={total:0,ok:0,area:r.area||''};ops[k].total++;if(r.estado==='Aprobado')ops[k].ok++;});
+  const failing=Object.entries(ops).filter(([,d])=>d.total>=3&&Math.round((d.ok/d.total)*100)<META);
+  const sec=document.getElementById('alarm-section');
+  if(sec)sec.innerHTML=failing.length?`<div class="alarm-banner"><h3>🚨 Bajo el 90%</h3>${failing.map(([n,d])=>{const pct=Math.round((d.ok/d.total)*100);return`<div class="alarm-item"><div><div class="alarm-name">${n}</div><div class="alarm-sub">${d.area} · ${d.total} insp.</div></div><div class="alarm-pct">${pct}%</div></div>`;}).join('')}</div>`:'';
 }
 
-function renderRegistros() {
-  const filtered = filtro === 'Todos' ? registros : registros.filter(r => r.estado === filtro);
-  document.getElementById('reg-count').textContent = filtered.length + ' items';
+// ── REGISTROS
+function setFiltro(f,btn){filtro=f;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRegistros();}
 
-  const list = document.getElementById('reg-list');
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="emoji">📭</div><p>Sin registros</p></div>';
-    return;
-  }
-  list.innerHTML = filtered.map(r => {
-    const ck = r.checklist || {};
-    const okC = Object.values(ck).filter(v => v === true).length;
-    const failC = Object.values(ck).filter(v => v === false).length;
-    const isActive = detalleId === r.id;
-    return `<div class="reg-item ${isActive ? 'active' : ''}" onclick="toggleDetalle('${r.id}')">
+function renderRegistros(){
+  const q=(document.getElementById('search-input')?.value||'').toLowerCase().trim();
+  let data=registros;
+  if(filtro==='Retrabajo') data=data.filter(r=>r.retrabajos?.length);
+  else if(filtro!=='Todos') data=data.filter(r=>r.estado===filtro);
+  if(q) data=data.filter(r=>(r.producto||'').toLowerCase().includes(q)||(r.operario||'').toLowerCase().includes(q)||(r.area||'').toLowerCase().includes(q));
+  document.getElementById('reg-count').textContent=data.length+' items';
+  const list=document.getElementById('reg-list');
+  if(!data.length){list.innerHTML='<div class="empty"><div class="emo">📭</div><p>Sin resultados</p></div>';return;}
+  list.innerHTML=data.map(r=>{
+    const ck=r.checklist||{},okC=Object.values(ck).filter(v=>v===true).length,failC=Object.values(ck).filter(v=>v===false).length;
+    const crit=r.defectos?.filter(d=>d.severidad==='critico').length||0;
+    return`<div class="reg-item${detalleId===r.id?' sel':''}${r.retrabajos?.length?' has-ret':''}" onclick="toggleDet('${r.id}')">
       <div class="reg-top">
         <div>
           <div class="reg-name">${r.producto}</div>
-          <div class="reg-meta">${r.responsable} · ${r.fecha} · ${r.cantidad} uds</div>
+          <div class="reg-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha} · ${r.cantidad} uds</div>
           <div class="reg-counts">
-            <span style="color:#34d399">✓ ${okC}</span>
-            <span style="color:#f87171">✕ ${failC}</span>
-            ${r.fotos?.length ? `<span style="color:rgba(255,255,255,0.35)">📷 ${r.fotos.length}</span>` : ''}
+            <span style="color:#34d399">✓ ${okC}</span><span style="color:#f87171">✕ ${failC}</span>
+            ${crit?`<span style="color:#fca5a5">🔴 ${crit} crítico(s)</span>`:''}
+            ${r.fotos?.length?`<span style="color:rgba(255,255,255,0.35)">📷 ${r.fotos.length}</span>`:''}
+            ${r.retrabajos?.length?`<span style="color:#fdba74">🔧 ${r.retrabajos.length}</span>`:''}
           </div>
         </div>
-        <span class="${badgeClass(r.estado)}">${r.estado}</span>
+        <span class="${bclass(r.estado)}">${r.estado}</span>
       </div>
     </div>`;
   }).join('');
 }
 
-function showDetalle(id) {
-  detalleId = id;
-  renderDetalle();
-  renderRegistros();
+function showDet(id){detalleId=id;renderDet();renderRegistros();}
+function toggleDet(id){detalleId=detalleId===id?null:id;renderDet();renderRegistros();}
+
+function diasEntre(d1,d2){if(!d1||!d2)return null;return Math.round((new Date(d2)-new Date(d1))/(1000*60*60*24));}
+
+function cambiarEstado(id,e){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  const ant=r.estado;r.estado=e;
+  r.historial=r.historial||[];
+  r.historial.push({estado:e,estadoAnterior:ant,fecha:new Date().toISOString(),nota:`${ant} → ${e}`});
+  if(e==='Aprobado')r.retrabajos=r.retrabajos?.map(rt=>({...rt}));
+  save();renderDet();renderRegistros();renderDashboard();
 }
 
-function toggleDetalle(id) {
-  detalleId = detalleId === id ? null : id;
-  renderDetalle();
-  renderRegistros();
+function resolverRetrabajo(regId,idx){
+  const r=registros.find(x=>x.id===regId);if(!r)return;
+  r.retrabajos[idx].fechaResolucion=new Date().toISOString();
+  save();renderDet();renderRegistros();
 }
 
-function renderDetalle() {
-  const panel = document.getElementById('detalle-panel');
-  if (!detalleId) { panel.innerHTML = ''; return; }
-  const r = registros.find(x => x.id === detalleId);
-  if (!r) { panel.innerHTML = ''; return; }
+function renderDet(){
+  const panel=document.getElementById('det-panel');
+  if(!detalleId){panel.innerHTML='';return;}
+  const r=registros.find(x=>x.id===detalleId);if(!r){panel.innerHTML='';return;}
+  const ckTags=Object.keys(r.checklist||{}).filter(k=>CHECKLIST.includes(k)).map(item=>{const v=r.checklist[item];return`<span class="cktag ${v===true?'cktag-ok':v===false?'cktag-fail':'cktag-none'}">${v===true?'✓':v===false?'✕':'·'} ${item}</span>`;}).join('');
+  const defHtml=(r.defectos||[]).length?`<div style="margin-top:9px"><div class="sec-title">Defectos</div><div style="display:flex;flex-wrap:wrap;gap:5px">${r.defectos.map(d=>{const cls=d.severidad==='critico'?'cktag-fail':d.severidad==='mayor'?'b-ret':'';return`<span class="cktag ${cls}">${d.severidad==='critico'?'🔴':d.severidad==='mayor'?'🟠':'🟡'} ${d.nombre||d}</span>`;}).join('')}</div></div>`:'';
+  const fotosHtml=r.fotos?.length?`<div style="margin-top:9px"><div class="sec-title">Fotos (${r.fotos.length})</div><div class="foto-grid">${r.fotos.map(s=>`<img src="${s}" style="width:100%;height:80px;object-fit:cover;border-radius:9px;cursor:pointer" onclick="openLB('${s}')">`).join('')}</div></div>`:'';
+  const retHtml=(r.retrabajos||[]).map((rt,i)=>{
+    const dias=diasEntre(rt.fecha,rt.fechaResolucion);
+    const timer=rt.fechaResolucion?`<div class="ret-resolved">✅ Resuelto en ${dias} día(s)</div>`:`<div class="ret-timer">⏱ ${diasEntre(rt.fecha,new Date().toISOString())}d pendiente</div>`;
+    const resBtn=!rt.fechaResolucion?`<button onclick="resolverRetrabajo('${r.id}',${i})" style="margin-top:6px;padding:5px 10px;border-radius:8px;border:none;cursor:pointer;background:rgba(52,211,153,0.2);color:#34d399;font-weight:700;font-size:10px;font-family:'DM Sans',sans-serif">✅ Marcar resuelto</button>`:'';
+    return`<div class="ret-det"><div class="ret-det-title">🔧 Retrabajo ${i+1}${rt.postEntrega?' (post-entrega)':''}</div>
+      <div class="ret-det-sec">⚠️ Causante</div>
+      <div class="det-row"><span class="det-k">Área</span><span class="det-v">${rt.causaArea||'—'}</span></div>
+      <div class="det-row"><span class="det-k">Operario</span><span class="det-v">${rt.causaOp||'—'}</span></div>
+      <div class="ret-det-sec">🔨 Repara</div>
+      <div class="det-row"><span class="det-k">Área</span><span class="det-v">${rt.repArea||'—'}</span></div>
+      <div class="det-row"><span class="det-k">Operario</span><span class="det-v">${rt.repOp||'—'}</span></div>
+      <div class="det-row"><span class="det-k">Problema</span><span class="det-v">${rt.descripcion||'—'}</span></div>
+      ${timer}${resBtn}</div>`;
+  }).join('');
+  const histHtml=r.historial?.length>1?`<div style="margin-top:9px"><div class="sec-title">Historial</div>${r.historial.slice(1).map(h=>`<div class="hist-item">→ ${h.nota} · ${new Date(h.fecha).toLocaleDateString()}</div>`).join('')}</div>`:'';
+  const otrosBtns=['Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
+  panel.innerHTML=`<div class="det-box">
+    <div class="det-hdr"><div style="font-weight:900;font-size:14px">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}</div>
+    ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds'],['Comentarios',r.comentarios||'—']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
+    <div style="margin-top:9px"><div class="sec-title">Checklist</div><div class="ck-tags">${ckTags}</div></div>
+    ${defHtml}${retHtml}${fotosHtml}${histHtml}
+    <button class="add-ret-btn" onclick="this.style.display='none';document.getElementById('arf-${r.id}').style.display='block'">+ Retrabajo post-entrega</button>
+    ${buildAddRetForm(r.id)}
+    <div class="cambio-estado"><p>Cambiar estado</p><div class="cambio-btns">${otrosBtns}</div></div>
+    <div class="monday-badge"><p>📌 MONDAY.COM</p><p>Listo para sincronizar</p></div>
+  </div>`;
+  const arf=document.getElementById('arf-'+r.id);if(arf)arf.style.display='none';
+}
 
-  const ckTags = CHECKLIST.map(item => {
-    const v = r.checklist?.[item];
-    const cls = v === true ? 'ck-tag ck-tag-ok' : v === false ? 'ck-tag ck-tag-fail' : 'ck-tag ck-tag-none';
-    const icon = v === true ? '✓' : v === false ? '✕' : '·';
-    return `<span class="${cls}">${icon} ${item}</span>`;
+function buildAddRetForm(id){
+  let aOpts=Object.keys(AREAS).map(a=>`<option value="${a}">${a}</option>`).join('');
+  return`<div class="add-ret-form" id="arf-${id}">
+    <div style="font-size:11px;font-weight:900;color:#fdba74;margin-bottom:9px">🔧 Retrabajo post-entrega</div>
+    <div class="ret-section">
+      <div class="ret-section-label">⚠️ Causante (afecta métricas)</div>
+      <div class="fg"><label class="flabel">Área</label><select class="finput" id="arc-area-${id}" onchange="updDyn('arc-area-${id}','arc-op-${id}')"><option value="">Seleccionar...</option>${aOpts}</select></div>
+      <div class="fg" style="margin-bottom:0"><label class="flabel">Operario</label><select class="finput" id="arc-op-${id}"><option value="">Seleccionar...</option></select></div>
+    </div>
+    <div class="ret-section" style="margin-top:7px">
+      <div class="ret-section-label">🔨 Quién repara</div>
+      <div class="fg"><label class="flabel">Área</label><select class="finput" id="arr-area-${id}" onchange="updDyn('arr-area-${id}','arr-op-${id}')"><option value="">Seleccionar...</option>${aOpts}</select></div>
+      <div class="fg" style="margin-bottom:0"><label class="flabel">Operario</label><select class="finput" id="arr-op-${id}"><option value="">Seleccionar...</option></select></div>
+    </div>
+    <div class="fg" style="margin-top:7px"><label class="flabel">Descripción</label><textarea class="finput" id="ard-${id}" rows="2" placeholder="¿Qué debe corregirse?"></textarea></div>
+    <button onclick="agregarRetrabajo('${id}')" style="width:100%;padding:8px;border-radius:9px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--orange),#ef4444);color:#fff;font-weight:900;font-size:12px;font-family:'DM Sans',sans-serif;margin-top:7px">Guardar retrabajo</button>
+  </div>`;
+}
+
+function updDyn(aId,oId){
+  const area=document.getElementById(aId).value;
+  const sel=document.getElementById(oId);
+  sel.innerHTML='<option value="">Seleccionar...</option>';
+  if(area&&AREAS[area])AREAS[area].forEach(op=>{const o=document.createElement('option');o.value=op;o.textContent=op;sel.appendChild(o);});
+}
+
+function agregarRetrabajo(id){
+  const cA=document.getElementById('arc-area-'+id)?.value;
+  const cO=document.getElementById('arc-op-'+id)?.value;
+  const rA=document.getElementById('arr-area-'+id)?.value;
+  const rO=document.getElementById('arr-op-'+id)?.value;
+  const desc=document.getElementById('ard-'+id)?.value;
+  if(!desc&&!cA)return;
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  r.retrabajos=r.retrabajos||[];
+  r.retrabajos.push({causaArea:cA,causaOp:cO,repArea:rA,repOp:rO,descripcion:desc,fecha:new Date().toISOString(),fechaResolucion:null,postEntrega:true});
+  save();renderDet();renderRegistros();renderDashboard();renderKpis();
+}
+
+// ── KPIs
+function buildMonthBar(){
+  const months=[...new Set(registros.map(r=>getMonthKey(r.fecha)))].filter(Boolean).sort().reverse();
+  const bar=document.getElementById('month-bar');
+  bar.innerHTML=`<button class="mbtn${selectedMonth==='all'?' active':''}" onclick="setMonth('all',this)">Todos</button>`+
+    months.map(m=>`<button class="mbtn${selectedMonth===m?' active':''}" onclick="setMonth('${m}',this)">${getMonthLabel(m)}</button>`).join('');
+}
+
+function setMonth(m,btn){selectedMonth=m;document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderKpis();}
+function filterByMonth(list){return selectedMonth==='all'?list:list.filter(r=>getMonthKey(r.fecha)===selectedMonth);}
+function switchKpi(t,btn){kpiTab=t;document.querySelectorAll('.ktab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderKpis();}
+
+function renderKpis(){
+  const cont=document.getElementById('kpi-content');
+  const data=filterByMonth(registros);
+  if(kpiTab==='bono'){ renderBono(cont,data); return; }
+  if(!data.length){cont.innerHTML=`<div class="no-data-month">Sin datos${selectedMonth!=='all'?' para '+getMonthLabel(selectedMonth):''}</div>`;return;}
+
+  if(kpiTab==='op'||kpiTab==='area'){
+    const map={};
+    data.forEach(r=>{
+      const k=kpiTab==='op'?(r.operario||'Sin asignar'):(r.area||'Sin área');
+      if(!map[k])map[k]={total:0,ok:0,ret:0,sub:kpiTab==='op'?(r.area||''):'',criticos:0};
+      map[k].total++;if(r.estado==='Aprobado')map[k].ok++;
+      map[k].criticos+=(r.defectos||[]).filter(d=>d.severidad==='critico').length;
+      (r.retrabajos||[]).forEach(rt=>{
+        const rk=kpiTab==='op'?(rt.causaOp||''):(rt.causaArea||'');
+        if(rk){if(!map[rk])map[rk]={total:0,ok:0,ret:0,sub:kpiTab==='op'?(rt.causaArea||''):'',criticos:0};map[rk].ret++;}
+      });
+    });
+    cont.innerHTML=Object.entries(map).sort((a,b)=>b[1].total-a[1].total).map(([name,d])=>{
+      const pct=d.total?Math.round((d.ok/d.total)*100):0;
+      const bad=pct<META&&d.total>=1;
+      return`<div class="kpi-row${bad?' alarm':''}">
+        <div class="kpi-top">
+          <div><div class="kpi-name">${name}</div><div class="kpi-sub">${d.sub?d.sub+' · ':''}${d.total} insp.${d.ret?` · 🔧${d.ret}`:''} ${d.criticos?`· 🔴${d.criticos} crít.`:''}</div></div>
+          <div style="text-align:right"><div class="kpi-pct ${bad?'bad':'good'}">${pct}%</div>${bad?'<div class="kpi-alarm-label">⚠️ Bajo meta</div>':''}</div>
+        </div>
+        <div class="kpi-bar-wrap"><div class="kpi-bar-fill ${bad?'bad':'good'}" style="width:${pct}%"></div></div>
+        <div class="kpi-stats"><span>✓ <b>${d.ok}</b></span><span>✕ <b>${d.total-d.ok}</b></span><span>Meta <b>90%</b></span></div>
+      </div>`;
+    }).join('');
+  }
+
+  if(kpiTab==='ret'){
+    const allRets=[];
+    data.forEach(r=>(r.retrabajos||[]).forEach(rt=>allRets.push({...rt,producto:r.producto})));
+    if(!allRets.length){cont.innerHTML='<div class="empty"><div class="emo">✅</div><p>Sin retrabajos</p></div>';return;}
+    const byOp={};
+    allRets.forEach(rt=>{
+      const k=rt.causaOp||'Sin asignar';
+      if(!byOp[k])byOp[k]={count:0,area:rt.causaArea||'',prods:[],diasTotal:0,resueltos:0};
+      byOp[k].count++;byOp[k].prods.push(rt.producto||'—');
+      const dias=diasEntre(rt.fecha,rt.fechaResolucion);
+      if(dias!==null){byOp[k].diasTotal+=dias;byOp[k].resueltos++;}
+    });
+    const pend=allRets.filter(rt=>!rt.fechaResolucion).length;
+    const res=allRets.filter(rt=>rt.fechaResolucion).length;
+    const diasProm=res?Math.round(allRets.filter(rt=>rt.fechaResolucion).reduce((a,rt)=>a+diasEntre(rt.fecha,rt.fechaResolucion),0)/res):null;
+    cont.innerHTML=`<div style="display:flex;gap:7px;margin-bottom:10px">
+      <div style="flex:1;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:9px;text-align:center"><div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">Total</div><div style="font-size:18px;font-weight:900;color:var(--orange)">${allRets.length}</div></div>
+      <div style="flex:1;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:10px;padding:9px;text-align:center"><div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">Pendientes</div><div style="font-size:18px;font-weight:900;color:#f87171">${pend}</div></div>
+      <div style="flex:1;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:9px;text-align:center"><div style="font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px">Prom. días</div><div style="font-size:18px;font-weight:900;color:#34d399">${diasProm!==null?diasProm+'d':'—'}</div></div>
+    </div>`+Object.entries(byOp).sort((a,b)=>b[1].count-a[1].count).map(([name,d])=>{
+      const prom=d.resueltos?Math.round(d.diasTotal/d.resueltos):null;
+      return`<div class="ret-kpi-row"><div><div class="rki-name">🔧 ${name}</div><div class="rki-sub">${d.area} · ${[...new Set(d.prods)].slice(0,2).join(', ')}</div>${prom!==null?`<div style="font-size:9px;color:#34d399;margin-top:2px">⏱ Prom. ${prom}d resolución</div>`:''}</div><div class="rki-count">${d.count}</div></div>`;
+    }).join('');
+  }
+}
+
+// ── BONO
+function calcBono(pct){
+  for(const e of bonoEscala){if(pct>=e.min&&pct<=e.max)return e;}
+  return bonoEscala[bonoEscala.length-1];
+}
+
+function renderBono(cont, data){
+  // Config section
+  let configHtml=`<div class="bono-config">
+    <div class="bono-config-title">⚙️ Escala de bono (configurable)</div>
+    ${bonoEscala.map((e,i)=>`<div class="escala-row">
+      <input value="${e.min}" onchange="bonoEscala[${i}].min=parseInt(this.value);renderKpis()" title="Desde %">
+      <span>% a</span>
+      <input value="${e.max}" onchange="bonoEscala[${i}].max=parseInt(this.value);renderKpis()" title="Hasta %">
+      <span>% →</span>
+      <input value="${e.pct}" onchange="bonoEscala[${i}].pct=parseInt(this.value);renderKpis()" title="% del bono">
+      <span>% del bono</span>
+    </div>`).join('')}
+    <div style="font-size:9px;color:var(--dim);margin-top:6px">💡 Ajusta los rangos según tu política de empresa</div>
+  </div>`;
+
+  if(!data.length){ cont.innerHTML=configHtml+`<div class="no-data-month">Sin datos${selectedMonth!=='all'?' para '+getMonthLabel(selectedMonth):''}</div>`; return; }
+
+  // Compute per operario
+  const ops={};
+  data.forEach(r=>{
+    const k=r.operario||'Sin asignar';
+    if(!ops[k])ops[k]={total:0,ok:0,area:r.area||''};
+    ops[k].total++;if(r.estado==='Aprobado')ops[k].ok++;
+  });
+
+  const bonoRows=Object.entries(ops).sort((a,b)=>{
+    const pa=Math.round((a[1].ok/a[1].total)*100), pb=Math.round((b[1].ok/b[1].total)*100);
+    return pb-pa;
+  }).map(([name,d])=>{
+    const pct=Math.round((d.ok/d.total)*100);
+    const escala=calcBono(pct);
+    const cumple=pct>=META;
+    return`<div class="bono-card ${cumple?'cumple':'no-cumple'}">
+      <div class="bono-top">
+        <div><div class="bono-name">${name}</div><div class="bono-area">${d.area} · ${d.total} insp.</div></div>
+        <div style="text-align:right">
+          <div class="bono-pct-big" style="color:${pct>=90?'#34d399':pct>=75?'#fbbf24':'#ef4444'}">${pct}%</div>
+          <div style="font-size:10px;font-weight:700;color:${escala.pct===100?'#34d399':escala.pct>0?'#fbbf24':'#f87171'};margin-top:2px">💰 ${escala.pct}% del bono</div>
+        </div>
+      </div>
+      <div class="bono-bar-wrap">
+        <div class="bono-bar" style="width:${pct}%;background:${pct>=90?'linear-gradient(90deg,#34d399,#6ee7b7)':pct>=75?'linear-gradient(90deg,#d97706,#fbbf24)':'linear-gradient(90deg,#dc2626,#f87171)'}"></div>
+        <div class="bono-meta-line" style="left:${META}%"></div>
+      </div>
+      <div class="bono-info"><span><b>${d.ok}</b> aprobados / <b>${d.total}</b> total</span><span style="color:${escala.pct===100?'#34d399':escala.pct>0?'#fbbf24':'#f87171'}">${escala.label}</span></div>
+    </div>`;
   }).join('');
 
-  const fotosHtml = r.fotos?.length ? `
-    <div style="margin-top:14px">
-      <div class="section-title">Fotos (${r.fotos.length})</div>
-      <div class="foto-grid">${r.fotos.map(src => `<img src="${src}" style="width:100%;height:100px;object-fit:cover;border-radius:12px;cursor:pointer" onclick="openLightbox('${src}')">`).join('')}</div>
-    </div>` : '';
+  cont.innerHTML=configHtml+`<div class="sec-title" style="margin-bottom:10px">Cálculo de bono por operario</div>`+bonoRows;
+}
 
-  panel.innerHTML = `
-    <div class="detalle-box">
-      <div class="detalle-header">
-        <div style="font-weight:900;font-size:16px">${r.producto}</div>
-        <button class="detalle-close" onclick="toggleDetalle('${r.id}')">✕</button>
-      </div>
-      <span class="${badgeClass(r.estado)}">${r.estado}</span>
-      <div style="margin-top:12px">
-        ${[['Responsable',r.responsable],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds'],['Defectos',r.defectos?.join(', ')||'Ninguno'],['Comentarios',r.comentarios||'—']].map(([k,v])=>`
-        <div class="detalle-row"><span class="detalle-key">${k}</span><span class="detalle-val">${v}</span></div>`).join('')}
-      </div>
-      <div style="margin-top:14px">
-        <div class="section-title">Checklist</div>
-        <div class="ck-tags">${ckTags}</div>
-      </div>
-      ${fotosHtml}
-      <div class="monday-badge">
-        <p>📌 MONDAY.COM</p>
-        <p>Conectado · Listo para sincronizar</p>
-      </div>
-    </div>`;
+// ── EXCEL EXPORT
+function exportarExcel(){
+  const mes=selectedMonth==='all'?'Todos los meses':getMonthLabel(selectedMonth);
+  const data=filterByMonth(registros);
+  if(!data.length){alert('Sin datos para exportar');return;}
+  const sep=',';
+  const lines=[];
+  lines.push(['REPORTE CONTROL DE CALIDAD QC']);
+  lines.push([`Período: ${mes}`]);
+  lines.push([`Generado: ${new Date().toLocaleDateString()}`]);
+  lines.push([]);
+  lines.push(['RESUMEN GENERAL']);
+  lines.push(['Métrica','Valor']);
+  const ok=data.filter(r=>r.estado==='Aprobado').length;
+  const fail=data.filter(r=>r.estado==='Rechazado').length;
+  const rev=data.filter(r=>r.estado==='En revisión').length;
+  const ret=data.filter(r=>r.retrabajos?.length).length;
+  const tasa=data.length?Math.round((ok/data.length)*100):0;
+  lines.push(['Total inspecciones',data.length],['Aprobados',ok],['Rechazados',fail],['En revisión',rev],['Con retrabajos',ret],['Tasa de aprobación',tasa+'%'],['Meta',META+'%'],['Cumple meta',tasa>=META?'SÍ':'NO']);
+  lines.push([]);
+  lines.push(['KPI POR OPERARIO']);
+  lines.push(['Operario','Área','Inspecciones','Aprobados','No Aprobados','Tasa %','Retrabajos Causados','Defectos Críticos','% Bono','Cumple Meta']);
+  const ops={};
+  data.forEach(r=>{
+    const k=r.operario||'Sin asignar';
+    if(!ops[k])ops[k]={total:0,ok:0,ret:0,criticos:0,area:r.area||''};
+    ops[k].total++;if(r.estado==='Aprobado')ops[k].ok++;
+    ops[k].criticos+=(r.defectos||[]).filter(d=>d.severidad==='critico').length;
+    (r.retrabajos||[]).forEach(rt=>{if(rt.causaOp){if(!ops[rt.causaOp])ops[rt.causaOp]={total:0,ok:0,ret:0,criticos:0,area:rt.causaArea||''};ops[rt.causaOp].ret++;}});
+  });
+  Object.entries(ops).sort((a,b)=>b[1].total-a[1].total).forEach(([n,d])=>{
+    const pct=d.total?Math.round((d.ok/d.total)*100):0;
+    const bono=calcBono(pct);
+    lines.push([n,d.area,d.total,d.ok,d.total-d.ok,pct+'%',d.ret,d.criticos,bono.pct+'%',pct>=META?'SÍ':'NO']);
+  });
+  lines.push([]);
+  lines.push(['DETALLE RETRABAJOS']);
+  lines.push(['Producto','Fecha','Estado','Área Causante','Op. Causante','Área Repara','Op. Repara','Descripción','Post-entrega','Días Resolución','Resuelto']);
+  data.forEach(r=>(r.retrabajos||[]).forEach(rt=>{
+    const dias=diasEntre(rt.fecha,rt.fechaResolucion);
+    lines.push([r.producto,r.fecha,r.estado,rt.causaArea||'—',rt.causaOp||'—',rt.repArea||'—',rt.repOp||'—',rt.descripcion||'—',rt.postEntrega?'Sí':'No',dias!==null?dias+'d':'Pendiente',rt.fechaResolucion?'Sí':'No']);
+  }));
+  const csv=lines.map(row=>Array.isArray(row)?row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(sep):'').join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`Reporte_QC_${selectedMonth==='all'?'completo':selectedMonth}.csv`;a.click();URL.revokeObjectURL(url);
 }
 </script>
 </body>
