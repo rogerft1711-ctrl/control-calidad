@@ -133,11 +133,13 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 .ck-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:9px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03)}
 .ck-row.cok{background:rgba(52,211,153,0.07);border-color:rgba(52,211,153,0.2)}
 .ck-row.cfail{background:rgba(248,113,113,0.07);border-color:rgba(248,113,113,0.2)}
+.ck-row.cna{background:rgba(100,116,139,0.1);border-color:rgba(100,116,139,0.25)}
 .ck-name{font-size:12px;font-weight:500;color:rgba(255,255,255,0.6)}
-.ck-row.cok .ck-name,.ck-row.cfail .ck-name{color:#fff}
+.ck-row.cok .ck-name,.ck-row.cfail .ck-name,.ck-row.cna .ck-name{color:#fff}
 .ckbtns{display:flex;gap:4px}
 .ckb{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;font-size:13px;background:rgba(255,255,255,0.08)}
-.ckb.bok{background:#34d399}.ckb.bfail{background:#f87171}
+.ckb.bok{background:#34d399}.ckb.bfail{background:#f87171}.ckb.bna{background:#64748b;color:#fff}
+.ckb-na{width:32px;font-size:9px;font-weight:800;color:rgba(255,255,255,0.6)}
 /* DEFECTS WITH SEVERITY */
 .defect-section{margin-bottom:11px}
 .sev-group{margin-bottom:9px}
@@ -192,6 +194,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 .cktag-ok{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25);font-weight:700}
 .cktag-fail{background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.25);font-weight:700}
 .cktag-none{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.07)}
+.cktag-na{background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);font-weight:700}
 .ret-det{background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:11px;padding:10px;margin-top:9px}
 .ret-det-title{font-size:11px;font-weight:900;color:#fdba74;margin-bottom:6px}
 .ret-det-sec{font-size:9px;letter-spacing:1px;color:rgba(249,115,22,0.6);text-transform:uppercase;margin:5px 0 3px}
@@ -289,6 +292,25 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 .otr-meta{font-size:9px;color:rgba(255,255,255,0.35);margin-top:1px}
 .otr-empty{font-size:10px;color:rgba(255,255,255,0.3);padding:8px 0}
 .otr-footer{text-align:center;font-size:9px;color:rgba(255,255,255,0.25);margin-top:14px}
+/* REPORTE PDF KPIs */
+#kpi-report{position:fixed;left:-9999px;top:0;width:480px;background:linear-gradient(135deg,#0a0a0f 0%,#0f1525 50%,#0a0a0f 100%);padding:22px;font-family:'DM Sans',sans-serif;color:#fff}
+.rpt-header{text-align:center;margin-bottom:18px}
+.rpt-header h2{font-size:19px;font-weight:900}
+.rpt-header h2 span{color:#6ee7b7}
+.rpt-header p{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.rpt-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.rpt-stat{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 6px;text-align:center}
+.rpt-stat b{display:block;font-size:18px;font-weight:900}
+.rpt-stat span{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.4)}
+.rpt-section-title{font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin:16px 0 8px}
+.rpt-row{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;margin-bottom:7px}
+.rpt-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.rpt-row-name{font-weight:700;font-size:12px}
+.rpt-row-sub{font-size:9px;color:rgba(255,255,255,0.35)}
+.rpt-row-pct{font-size:15px;font-weight:900}
+.rpt-bar-wrap{height:5px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden}
+.rpt-bar-fill{height:100%;border-radius:99px}
+.rpt-footer{text-align:center;font-size:9px;color:rgba(255,255,255,0.25);margin-top:16px}
 </style>
 </head>
 <body>
@@ -429,7 +451,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
       <!-- PASO 2: CHECKLIST -->
       <div class="wizard-page" id="wp-1">
         <div class="ck-box">
-          <div class="ck-header"><div><div class="flabel" style="margin-bottom:2px">Checklist · Mueble Checkout</div><div id="ck-summary" style="font-size:10px;color:var(--dim)">0 ✓ · 0 ✕ · 16 pendientes</div></div><div class="ck-pct" id="ck-pct">0%</div></div>
+          <div class="ck-header"><div><div class="flabel" style="margin-bottom:2px">Checklist · Mueble Checkout</div><div id="ck-summary" style="font-size:10px;color:var(--dim)">0 ✓ · 0 ✕ · 0 N/A · 17 pendientes</div></div><div class="ck-pct" id="ck-pct">0%</div></div>
           <div class="prog-bar"><div class="prog-fill" id="ck-bar" style="width:0%"></div></div>
           <button class="ck-all-btn" onclick="aprobarTodo()">✓ Aprobar todos los ítems</button>
           <div id="ck-rows"></div>
@@ -446,7 +468,10 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
         <div class="fg"><label class="flabel">Comentarios</label><textarea class="finput" id="f-comentarios" rows="2" placeholder="Observaciones..."></textarea></div>
         <div class="fg">
           <div style="display:flex;justify-content:space-between;align-items:center"><label class="flabel" style="margin:0">Fotos</label><span id="foto-count" style="font-size:10px;color:rgba(255,255,255,0.3)">0 foto(s)</span></div>
-          <label class="foto-label" id="foto-label-btn"><span style="font-size:17px">📷</span> Añadir foto(s)<input type="file" accept="image/*" multiple id="foto-input" style="display:none" onchange="handleFotos(this)"></label>
+          <div style="display:flex;gap:6px">
+            <label class="foto-label" id="foto-label-btn-cam" style="flex:1"><span style="font-size:17px">📸</span> Cámara<input type="file" accept="image/*" capture="environment" id="foto-input-camera" style="display:none" onchange="handleFotos(this)"></label>
+            <label class="foto-label" id="foto-label-btn-gal" style="flex:1"><span style="font-size:17px">🖼️</span> Galería<input type="file" accept="image/*" multiple id="foto-input-gallery" style="display:none" onchange="handleFotos(this)"></label>
+          </div>
           <div class="req-warn" id="foto-warn">⚠️ Foto obligatoria cuando el estado es Rechazado</div>
           <div class="foto-grid" id="foto-preview"></div>
         </div>
@@ -486,7 +511,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
     <!-- KPIs -->
     <div id="tab-kpis" class="tab-panel">
       <div class="page-title">KPIs</div>
-      <button class="export-btn" onclick="exportarExcel()">📊 Exportar reporte Excel</button>
+      <button class="export-btn" onclick="generarReportePDF()">📄 Reporte PDF (Dashboard + KPIs)</button>
       <div class="meta-line"><span>Meta mínima de calidad</span><span>90% ✅</span></div>
       <div class="kpi-tabs">
         <button class="ktab active" id="kt-op" onclick="switchKpi('op',this)">Operario</button>
@@ -511,6 +536,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 <div id="lightbox"><img id="lb-img" src="" alt=""><button id="lb-close" onclick="closeLB()">✕</button></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const META = 90;
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
@@ -650,7 +676,7 @@ try {
     console.log('Migrado desde v1');
   }
 } catch(e) { registros = []; }
-const CHECKLIST = ["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"];
+const CHECKLIST = ["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Vidrios","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"];
 CHECKLIST.forEach(k => formChecklist[k] = null);
 document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
 
@@ -661,7 +687,10 @@ document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0
 });
 buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar(); setOtEstado('produccion');
 
-function save(){ try{localStorage.setItem('qc_v5',JSON.stringify(registros));}catch{} }
+function save(){
+  try{ localStorage.setItem('qc_v5',JSON.stringify(registros)); return true; }
+  catch(e){ alert('⚠️ Almacenamiento lleno: no se pudo guardar. Borra fotos o registros antiguos para liberar espacio.'); return false; }
+}
 
 function borrarTodo(){
   if(!confirm('¿Seguro que quieres borrar TODOS los registros? Esta acción no se puede deshacer.'))return;
@@ -741,12 +770,18 @@ function updateOps(areaId, opId){
 }
 
 function bclass(e){ return e==='Aprobado'?'badge b-ok':e==='Rechazado'?'badge b-fail':'badge b-rev'; }
+function otColor(r){
+  const done = r.otEstado==='entregada' || r.estado==='Aprobado';
+  return done
+    ? {bg:'rgba(52,211,153,0.15)',fg:'#34d399',bd:'rgba(52,211,153,0.3)'}
+    : {bg:'rgba(251,191,36,0.15)',fg:'#fbbf24',bd:'rgba(251,191,36,0.3)'};
+}
 
 // ── CHECKLIST
 function buildChecklist(){
   document.getElementById('ck-rows').innerHTML=CHECKLIST.map((item,i)=>`
     <div class="ck-row" id="ckr-${i}"><span class="ck-name">${item}</span>
-      <div class="ckbtns"><button class="ckb" id="ckbok-${i}" onclick="setCk(${i},true)">✓</button><button class="ckb" id="ckbf-${i}" onclick="setCk(${i},false)">✕</button></div>
+      <div class="ckbtns"><button class="ckb" id="ckbok-${i}" onclick="setCk(${i},true)">✓</button><button class="ckb" id="ckbf-${i}" onclick="setCk(${i},false)">✕</button><button class="ckb ckb-na" id="ckbna-${i}" onclick="setCk(${i},'na')">N/A</button></div>
     </div>`).join('');
 }
 
@@ -756,22 +791,24 @@ function aprobarTodo(){
     document.getElementById('ckr-'+i).className='ck-row cok';
     document.getElementById('ckbok-'+i).className='ckb bok';
     document.getElementById('ckbf-'+i).className='ckb';
+    document.getElementById('ckbna-'+i).className='ckb ckb-na';
   });
   document.getElementById('ck-pct').textContent='100%';
   document.getElementById('ck-bar').style.width='100%';
-  document.getElementById('ck-summary').textContent=`${CHECKLIST.length} ✓ · 0 ✕ · 0 pendientes`;
+  document.getElementById('ck-summary').textContent=`${CHECKLIST.length} ✓ · 0 ✕ · 0 N/A · 0 pendientes`;
 }
 
 function setCk(i,val){
   const item=CHECKLIST[i]; formChecklist[item]=formChecklist[item]===val?null:val;
   const v=formChecklist[item];
-  document.getElementById('ckr-'+i).className='ck-row'+(v===true?' cok':v===false?' cfail':'');
+  document.getElementById('ckr-'+i).className='ck-row'+(v===true?' cok':v===false?' cfail':v==='na'?' cna':'');
   document.getElementById('ckbok-'+i).className='ckb'+(v===true?' bok':'');
   document.getElementById('ckbf-'+i).className='ckb'+(v===false?' bfail':'');
-  const vals=Object.values(formChecklist),ok=vals.filter(v=>v===true).length,fail=vals.filter(v=>v===false).length,tot=CHECKLIST.length,pct=Math.round(((ok+fail)/tot)*100);
+  document.getElementById('ckbna-'+i).className='ckb ckb-na'+(v==='na'?' bna':'');
+  const vals=Object.values(formChecklist),ok=vals.filter(v=>v===true).length,fail=vals.filter(v=>v===false).length,na=vals.filter(v=>v==='na').length,tot=CHECKLIST.length,pct=Math.round(((ok+fail+na)/tot)*100);
   document.getElementById('ck-pct').textContent=pct+'%';
   document.getElementById('ck-bar').style.width=pct+'%';
-  document.getElementById('ck-summary').textContent=`${ok} ✓ · ${fail} ✕ · ${tot-ok-fail} pendientes`;
+  document.getElementById('ck-summary').textContent=`${ok} ✓ · ${fail} ✕ · ${na} N/A · ${tot-ok-fail-na} pendientes`;
 }
 
 // ── DEFECTS BY AREA WITH SEVERITY
@@ -816,9 +853,38 @@ function setEstado(e){
   checkStep1(); checkSubmit();
 }
 
-function handleFotos(input){
-  Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=ev=>{formFotos.push(ev.target.result);renderFotos();};r.readAsDataURL(f);});
-  input.value=''; checkSubmit();
+function resizeImage(file,maxDim,quality){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxDim||h>maxDim){
+          if(w>h){h=Math.round(h*maxDim/w);w=maxDim;}
+          else{w=Math.round(w*maxDim/h);h=maxDim;}
+        }
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject;
+      img.src=ev.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFotos(input){
+  const files=Array.from(input.files);
+  input.value='';
+  for(const f of files){
+    try{ formFotos.push(await resizeImage(f,1280,0.7)); renderFotos(); }
+    catch(e){ alert('No se pudo procesar una de las fotos.'); }
+  }
+  checkSubmit();
 }
 function renderFotos(){
   document.getElementById('foto-count').textContent=formFotos.length+' foto(s)';
@@ -830,9 +896,10 @@ function closeLB(){document.getElementById('lightbox').classList.remove('show');
 
 function checkSubmit(){
   const fotoOk=formEstado!=='Rechazado'||formFotos.length>0;
-  const fl=document.getElementById('foto-label-btn'), fw=document.getElementById('foto-warn');
-  if(fl){ fl.className='foto-label'+(formEstado==='Rechazado'&&!formFotos.length?' foto-required':''); }
-  if(fw){ fw.className='req-warn'+(formEstado==='Rechazado'&&!formFotos.length?' show':''); }
+  const req=formEstado==='Rechazado'&&!formFotos.length;
+  ['foto-label-btn-cam','foto-label-btn-gal'].forEach(id=>{const el=document.getElementById(id); if(el) el.className='foto-label'+(req?' foto-required':'');});
+  const fw=document.getElementById('foto-warn');
+  if(fw){ fw.className='req-warn'+(req?' show':''); }
   const ok=canGoStep1()&&fotoOk;
   document.getElementById('submit-btn').disabled=!ok;
 }
@@ -870,7 +937,8 @@ function guardar(){
     historial:[{estado:formEstado,fecha:new Date().toISOString(),nota:'Registro inicial'}],
     creado:new Date().toISOString()
   };
-  registros.unshift(nuevo); save();
+  registros.unshift(nuevo);
+  if(!save()){ registros.shift(); return; }
   // Reset
   ['f-area','f-operario','r-causa-area','r-causa-op','r-rep-area','r-rep-op'].forEach(id=>document.getElementById(id).value='');
   ['f-operario','r-causa-op','r-rep-op'].forEach(id=>{document.getElementById(id).innerHTML='<option value="">Seleccionar...</option>';});
@@ -879,10 +947,10 @@ function guardar(){
   formEstado=''; formDefectos=[]; formFotos=[];
   CHECKLIST.forEach(k=>formChecklist[k]=null);
   setEstado(''); setOtEstado('produccion');
-  CHECKLIST.forEach((_,i)=>{document.getElementById('ckr-'+i).className='ck-row';document.getElementById('ckbok-'+i).className='ckb';document.getElementById('ckbf-'+i).className='ckb';});
+  CHECKLIST.forEach((_,i)=>{document.getElementById('ckr-'+i).className='ck-row';document.getElementById('ckbok-'+i).className='ckb';document.getElementById('ckbf-'+i).className='ckb';document.getElementById('ckbna-'+i).className='ckb ckb-na';});
   document.getElementById('ck-pct').textContent='0%';
   document.getElementById('ck-bar').style.width='0%';
-  document.getElementById('ck-summary').textContent='0 ✓ · 0 ✕ · 16 pendientes';
+  document.getElementById('ck-summary').textContent='0 ✓ · 0 ✕ · 0 N/A · '+CHECKLIST.length+' pendientes';
   renderFotos(); document.getElementById('submit-btn').disabled=true;
   document.getElementById('ret-box').className='ret-box';
   buildDefects('');
@@ -996,7 +1064,7 @@ function renderRegistros(){
             ${crit?`<span style="color:#fca5a5">🔴 ${crit} crítico(s)</span>`:''}
             ${r.fotos?.length?`<span style="color:rgba(255,255,255,0.35)">📷 ${r.fotos.length}</span>`:''}
             ${r.retrabajos?.length?`<span style="color:#fdba74">🔧 ${r.retrabajos.length}</span>`:''}
-            ${r.ot?`<span style="color:#60a5fa">🗂️ ${r.ot} · ${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`:''}
+            ${r.ot?`<span style="color:#60a5fa">🗂️ ${r.ot}</span> <span style="color:${otColor(r).fg}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`:''}
           </div>
         </div>
         <span class="${bclass(r.estado)}">${r.estado}</span>
@@ -1080,7 +1148,7 @@ function renderDet(){
   const panel=document.getElementById('det-panel');
   if(!detalleId){panel.innerHTML='';return;}
   const r=registros.find(x=>x.id===detalleId);if(!r){panel.innerHTML='';return;}
-  const ckTags=Object.keys(r.checklist||{}).filter(k=>CHECKLIST.includes(k)).map(item=>{const v=r.checklist[item];return`<span class="cktag ${v===true?'cktag-ok':v===false?'cktag-fail':'cktag-none'}">${v===true?'✓':v===false?'✕':'·'} ${item}</span>`;}).join('');
+  const ckTags=Object.keys(r.checklist||{}).filter(k=>CHECKLIST.includes(k)).map(item=>{const v=r.checklist[item];const cls=v===true?'cktag-ok':v===false?'cktag-fail':v==='na'?'cktag-na':'cktag-none';const lbl=v===true?'✓':v===false?'✕':v==='na'?'N/A':'·';return`<span class="cktag ${cls}">${lbl} ${item}</span>`;}).join('');
   const defHtml=(r.defectos||[]).length?`<div style="margin-top:9px"><div class="sec-title">Defectos</div><div style="display:flex;flex-wrap:wrap;gap:5px">${r.defectos.map(d=>{const cls=d.severidad==='critico'?'cktag-fail':d.severidad==='mayor'?'b-ret':'';return`<span class="cktag ${cls}">${d.severidad==='critico'?'🔴':d.severidad==='mayor'?'🟠':'🟡'} ${d.nombre||d}</span>`;}).join('')}</div></div>`:'';
   const fotosHtml=r.fotos?.length?`<div style="margin-top:9px"><div class="sec-title">Fotos (${r.fotos.length})</div><div class="foto-grid">${r.fotos.map(s=>`<img src="${s}" style="width:100%;height:80px;object-fit:cover;border-radius:9px;cursor:pointer" onclick="openLB('${s}')">`).join('')}</div></div>`:'';
   const retHtml=(r.retrabajos||[]).map((rt,i)=>{
@@ -1101,7 +1169,7 @@ function renderDet(){
   const otrosBtns=['Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
   panel.innerHTML=`<div class="det-box">
     <div class="det-hdr"><div style="font-weight:900;font-size:14px">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?`<span class="badge" style="${r.otEstado==='entregada'?'background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3)':'background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)'}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`:''}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`;})():''}</div>
     ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds'],['Comentarios',r.comentarios||'—']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
     <div style="margin-top:9px"><div class="sec-title">Checklist</div><div class="ck-tags">${ckTags}</div></div>
     ${defHtml}${retHtml}${fotosHtml}${histHtml}
@@ -1280,52 +1348,72 @@ function renderBono(cont, data){
   cont.innerHTML=configHtml+`<div class="sec-title" style="margin-bottom:10px">Cálculo de bono por operario</div>`+bonoRows;
 }
 
-// ── EXCEL EXPORT
-function exportarExcel(){
+// ── REPORTE PDF (Dashboard + KPIs)
+async function generarReportePDF(){
   const mes=selectedMonth==='all'?'Todos los meses':getMonthLabel(selectedMonth);
   const data=filterByMonth(registros);
-  if(!data.length){alert('Sin datos para exportar');return;}
-  const sep=',';
-  const lines=[];
-  lines.push(['REPORTE CONTROL DE CALIDAD QC']);
-  lines.push([`Período: ${mes}`]);
-  lines.push([`Generado: ${new Date().toLocaleDateString()}`]);
-  lines.push([]);
-  lines.push(['RESUMEN GENERAL']);
-  lines.push(['Métrica','Valor']);
+  if(!data.length){alert('Sin datos para generar el reporte'+(selectedMonth!=='all'?' de '+mes:''));return;}
+
   const ok=data.filter(r=>r.estado==='Aprobado').length;
   const fail=data.filter(r=>r.estado==='Rechazado').length;
   const rev=data.filter(r=>r.estado==='En revisión').length;
   const ret=data.filter(r=>r.retrabajos?.length).length;
-  const tasa=data.length?Math.round((ok/data.length)*100):0;
-  lines.push(['Total inspecciones',data.length],['Aprobados',ok],['Rechazados',fail],['En revisión',rev],['Con retrabajos',ret],['Tasa de aprobación',tasa+'%'],['Meta',META+'%'],['Cumple meta',tasa>=META?'SÍ':'NO']);
-  lines.push([]);
-  lines.push(['KPI POR OPERARIO']);
-  lines.push(['Operario','Área','Inspecciones','Aprobados','No Aprobados','Tasa %','Retrabajos Causados','Defectos Críticos','% Bono','Cumple Meta']);
+  const tasa=Math.round((ok/data.length)*100);
+
   const ops={};
   data.forEach(r=>{
     const k=r.operario||'Sin asignar';
-    if(!ops[k])ops[k]={total:0,ok:0,ret:0,criticos:0,area:r.area||''};
+    if(!ops[k])ops[k]={total:0,ok:0,area:r.area||''};
     ops[k].total++;if(r.estado==='Aprobado')ops[k].ok++;
-    ops[k].criticos+=(r.defectos||[]).filter(d=>d.severidad==='critico').length;
-    (r.retrabajos||[]).forEach(rt=>{if(rt.causaOp){if(!ops[rt.causaOp])ops[rt.causaOp]={total:0,ok:0,ret:0,criticos:0,area:rt.causaArea||''};ops[rt.causaOp].ret++;}});
   });
-  Object.entries(ops).sort((a,b)=>b[1].total-a[1].total).forEach(([n,d])=>{
-    const pct=d.total?Math.round((d.ok/d.total)*100):0;
-    const bono=calcBono(pct);
-    lines.push([n,d.area,d.total,d.ok,d.total-d.ok,pct+'%',d.ret,d.criticos,bono.pct+'%',pct>=META?'SÍ':'NO']);
-  });
-  lines.push([]);
-  lines.push(['DETALLE RETRABAJOS']);
-  lines.push(['Producto','Fecha','Estado','Área Causante','Op. Causante','Área Repara','Op. Repara','Descripción','Post-entrega','Días Resolución','Resuelto']);
-  data.forEach(r=>(r.retrabajos||[]).forEach(rt=>{
-    const dias=diasEntre(rt.fecha,rt.fechaResolucion);
-    lines.push([r.producto,r.fecha,r.estado,rt.causaArea||'—',rt.causaOp||'—',rt.repArea||'—',rt.repOp||'—',rt.descripcion||'—',rt.postEntrega?'Sí':'No',dias!==null?dias+'d':'Pendiente',rt.fechaResolucion?'Sí':'No']);
-  }));
-  const csv=lines.map(row=>Array.isArray(row)?row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(sep):'').join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`Reporte_QC_${selectedMonth==='all'?'completo':selectedMonth}.csv`;a.click();URL.revokeObjectURL(url);
+  const opRows=Object.entries(ops).sort((a,b)=>b[1].total-a[1].total).map(([name,d])=>{
+    const pct=Math.round((d.ok/d.total)*100);
+    const color=pct>=90?'#34d399':pct>=75?'#fbbf24':'#f87171';
+    return`<div class="rpt-row">
+      <div class="rpt-row-top"><div><div class="rpt-row-name">${name}</div><div class="rpt-row-sub">${d.area} · ${d.total} insp.</div></div><div class="rpt-row-pct" style="color:${color}">${pct}%</div></div>
+      <div class="rpt-bar-wrap"><div class="rpt-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  const allRets=[];
+  data.forEach(r=>(r.retrabajos||[]).forEach(rt=>allRets.push(rt)));
+  const pend=allRets.filter(rt=>!rt.fechaResolucion).length;
+  const res=allRets.length-pend;
+  const diasProm=res?Math.round(allRets.filter(rt=>rt.fechaResolucion).reduce((a,rt)=>a+diasEntre(rt.fecha,rt.fechaResolucion),0)/res):null;
+
+  const el=document.createElement('div');
+  el.id='kpi-report';
+  el.innerHTML=`
+    <div class="rpt-header"><h2>Control de <span>Calidad QC</span></h2><p>Reporte de KPIs · ${mes} · ${new Date().toLocaleDateString()}</p></div>
+    <div class="rpt-summary">
+      <div class="rpt-stat"><b>${data.length}</b><span>Total</span></div>
+      <div class="rpt-stat"><b style="color:#34d399">${ok}</b><span>Aprobados</span></div>
+      <div class="rpt-stat"><b style="color:#f87171">${fail}</b><span>Rechazados</span></div>
+      <div class="rpt-stat"><b style="color:#fbbf24">${rev}</b><span>Revisión</span></div>
+      <div class="rpt-stat"><b style="color:#f97316">${ret}</b><span>Retrabajos</span></div>
+      <div class="rpt-stat"><b style="color:${tasa>=90?'#34d399':tasa>=75?'#fbbf24':'#f87171'}">${tasa}%</b><span>Tasa (meta 90%)</span></div>
+    </div>
+    <div class="rpt-section-title">KPI por operario</div>
+    ${opRows||'<div class="otr-empty">Sin datos</div>'}
+    <div class="rpt-section-title">Retrabajos</div>
+    <div class="rpt-summary">
+      <div class="rpt-stat"><b style="color:#f97316">${allRets.length}</b><span>Total</span></div>
+      <div class="rpt-stat"><b style="color:#f87171">${pend}</b><span>Pendientes</span></div>
+      <div class="rpt-stat"><b style="color:#34d399">${diasProm!==null?diasProm+'d':'—'}</b><span>Prom. días</span></div>
+    </div>
+    <div class="rpt-footer">Generado por Control de Calidad QC</div>`;
+  document.body.appendChild(el);
+  try{
+    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
+    const imgData=canvas.toDataURL('image/png');
+    const{jsPDF}=window.jspdf;
+    const pdfW=210, pdfH=(canvas.height*pdfW)/canvas.width;
+    const pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pdfH]});
+    pdf.addImage(imgData,'PNG',0,0,pdfW,pdfH);
+    pdf.save(`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`);
+  } finally {
+    document.body.removeChild(el);
+  }
 }
 </script>
 </body>
