@@ -478,6 +478,9 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
       </div>
       <div id="det-panel"></div>
       <div id="reg-list"></div>
+      <div style="text-align:center;margin-top:16px">
+        <button onclick="borrarTodo()" style="background:none;border:none;color:rgba(248,113,113,0.5);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">🗑️ Borrar todos los registros</button>
+      </div>
     </div>
 
     <!-- KPIs -->
@@ -659,6 +662,12 @@ document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0
 buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar(); setOtEstado('produccion');
 
 function save(){ try{localStorage.setItem('qc_v5',JSON.stringify(registros));}catch{} }
+
+function borrarTodo(){
+  if(!confirm('¿Seguro que quieres borrar TODOS los registros? Esta acción no se puede deshacer.'))return;
+  registros=[]; detalleId=null;
+  save(); renderRegistros(); renderDashboard(); renderKpis();
+}
 
 function switchTab(t){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
