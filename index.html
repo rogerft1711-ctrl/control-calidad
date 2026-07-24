@@ -273,6 +273,22 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 #lightbox.show{display:flex}
 #lightbox img{max-width:100%;max-height:90vh;border-radius:14px;object-fit:contain}
 #lb-close{position:absolute;top:18px;right:18px;width:33px;height:33px;border-radius:99px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:16px;cursor:pointer}
+/* REPORTE OT (imagen) */
+#ot-report{position:fixed;left:-9999px;top:0;width:420px;background:linear-gradient(135deg,#0a0a0f 0%,#0f1525 50%,#0a0a0f 100%);padding:20px;font-family:'DM Sans',sans-serif;color:#fff}
+.otr-header{text-align:center;margin-bottom:16px}
+.otr-header h2{font-size:18px;font-weight:900}
+.otr-header h2 span{color:#6ee7b7}
+.otr-header p{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.otr-section-title{font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin:14px 0 8px}
+.otr-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:9px;margin-bottom:7px}
+.otr-thumb{width:46px;height:46px;border-radius:9px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,0.06)}
+.otr-thumb-empty{width:46px;height:46px;border-radius:9px;flex-shrink:0;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,0.2)}
+.otr-info{flex:1;min-width:0}
+.otr-ot{font-weight:900;font-size:12px}
+.otr-prod{font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.otr-meta{font-size:9px;color:rgba(255,255,255,0.35);margin-top:1px}
+.otr-empty{font-size:10px;color:rgba(255,255,255,0.3);padding:8px 0}
+.otr-footer{text-align:center;font-size:9px;color:rgba(255,255,255,0.25);margin-top:14px}
 </style>
 </head>
 <body>
@@ -373,6 +389,13 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
           <div><label class="flabel">Fecha</label><input class="finput" id="f-fecha" type="date" onchange="checkStep1()"></div>
           <div><label class="flabel">Cantidad</label><input class="finput" id="f-cantidad" type="number" placeholder="0" oninput="checkStep1()"></div>
         </div>
+        <div class="fg"><label class="flabel">N° de OT (opcional)</label><input class="finput" id="f-ot" placeholder="Ej: OT-1042"></div>
+        <div class="fg"><label class="flabel">Estado de la OT</label>
+          <div class="estado-btns">
+            <button class="ebtn" id="otb-prod" onclick="setOtEstado('produccion')">🏭 En producción</button>
+            <button class="ebtn" id="otb-ent" onclick="setOtEstado('entregada')">📦 Entregada</button>
+          </div>
+        </div>
         <div class="fg"><label class="flabel">Estado</label>
           <div class="estado-btns">
             <button class="ebtn" id="eb-ok" onclick="setEstado('Aprobado')">Aprobado</button>
@@ -441,6 +464,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
         <div class="page-title" style="margin:0">Registros</div>
         <span id="reg-count" style="font-size:11px;color:var(--dim)">0 items</span>
       </div>
+      <button class="export-btn" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)" onclick="generarReporteOT()">🖼️ Reporte de OT (imagen)</button>
       <div class="search-bar">
         <span class="search-icon">🔍</span>
         <input type="text" id="search-input" placeholder="Buscar producto, operario, área..." oninput="renderRegistros()">
@@ -483,6 +507,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 
 <div id="lightbox"><img id="lb-img" src="" alt=""><button id="lb-close" onclick="closeLB()">✕</button></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const META = 90;
 const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
@@ -570,7 +595,7 @@ let bonoEscala = [
 ];
 
 let registros = [], kpiTab = 'op', filtro = 'Todos', detalleId = null;
-let formFotos = [], formChecklist = {}, formDefectos = [], formEstado = '';
+let formFotos = [], formChecklist = {}, formDefectos = [], formEstado = '', formOtEstado = 'produccion';
 let selectedMonth = 'all', wizardStep = 0;
 
 try {
@@ -631,7 +656,7 @@ document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0
   const sel = document.getElementById(id);
   Object.keys(AREAS).forEach(a => { const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o); });
 });
-buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar();
+buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar(); setOtEstado('produccion');
 
 function save(){ try{localStorage.setItem('qc_v5',JSON.stringify(registros));}catch{} }
 
@@ -767,6 +792,12 @@ function toggleDef(sev, d){
   }
 }
 
+function setOtEstado(e){
+  formOtEstado=e;
+  document.getElementById('otb-prod').className='ebtn'+(e==='produccion'?' ok':'');
+  document.getElementById('otb-ent').className='ebtn'+(e==='entregada'?' ok':'');
+}
+
 function setEstado(e){
   formEstado=e;
   document.getElementById('eb-ok').className='ebtn'+(e==='Aprobado'?' ok':'');
@@ -811,6 +842,7 @@ function buildRetrabajo(){
 function guardar(){
   const ret=formEstado!=='Aprobado'?buildRetrabajo():null;
   if(ret==='ERROR') return;
+  const otNum=document.getElementById('f-ot').value.trim();
   const nuevo={
     id:Date.now().toString(),
     area:document.getElementById('f-area').value,
@@ -818,6 +850,8 @@ function guardar(){
     producto:document.getElementById('f-producto').value.trim(),
     fecha:document.getElementById('f-fecha').value,
     cantidad:document.getElementById('f-cantidad').value,
+    ot:otNum,
+    otEstado:otNum?formOtEstado:'',
     estado:formEstado,
     retrabajos:ret?[ret]:[],
     checklist:{...formChecklist},
@@ -831,11 +865,11 @@ function guardar(){
   // Reset
   ['f-area','f-operario','r-causa-area','r-causa-op','r-rep-area','r-rep-op'].forEach(id=>document.getElementById(id).value='');
   ['f-operario','r-causa-op','r-rep-op'].forEach(id=>{document.getElementById(id).innerHTML='<option value="">Seleccionar...</option>';});
-  ['f-producto','f-cantidad','f-comentarios','r-desc'].forEach(id=>document.getElementById(id).value='');
+  ['f-producto','f-cantidad','f-comentarios','r-desc','f-ot'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
   formEstado=''; formDefectos=[]; formFotos=[];
   CHECKLIST.forEach(k=>formChecklist[k]=null);
-  setEstado('');
+  setEstado(''); setOtEstado('produccion');
   CHECKLIST.forEach((_,i)=>{document.getElementById('ckr-'+i).className='ck-row';document.getElementById('ckbok-'+i).className='ckb';document.getElementById('ckbf-'+i).className='ckb';});
   document.getElementById('ck-pct').textContent='0%';
   document.getElementById('ck-bar').style.width='0%';
@@ -953,6 +987,7 @@ function renderRegistros(){
             ${crit?`<span style="color:#fca5a5">🔴 ${crit} crítico(s)</span>`:''}
             ${r.fotos?.length?`<span style="color:rgba(255,255,255,0.35)">📷 ${r.fotos.length}</span>`:''}
             ${r.retrabajos?.length?`<span style="color:#fdba74">🔧 ${r.retrabajos.length}</span>`:''}
+            ${r.ot?`<span style="color:#60a5fa">🗂️ ${r.ot} · ${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`:''}
           </div>
         </div>
         <span class="${bclass(r.estado)}">${r.estado}</span>
@@ -973,6 +1008,57 @@ function cambiarEstado(id,e){
   r.historial.push({estado:e,estadoAnterior:ant,fecha:new Date().toISOString(),nota:`${ant} → ${e}`});
   if(e==='Aprobado')r.retrabajos=r.retrabajos?.map(rt=>({...rt}));
   save();renderDet();renderRegistros();renderDashboard();
+}
+
+function otBtnsHtml(r){
+  if(!r.ot) return '';
+  const cur=r.otEstado||'produccion';
+  const opts=[['produccion','🏭 En producción','cbtn-rev'],['entregada','📦 Entregada','cbtn-ok']].filter(o=>o[0]!==cur);
+  return `<div class="cambio-estado"><p>Estado de la OT</p><div class="cambio-btns">${opts.map(o=>`<button class="cbtn ${o[2]}" onclick="cambiarOtEstado('${r.id}','${o[0]}')">${o[1]}</button>`).join('')}</div></div>`;
+}
+
+function cambiarOtEstado(id,e){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  r.otEstado=e;
+  r.historial=r.historial||[];
+  r.historial.push({estado:r.estado,fecha:new Date().toISOString(),nota:`OT → ${e==='entregada'?'Entregada':'En producción'}`});
+  save();renderDet();renderRegistros();
+}
+
+// ── REPORTE DE OT (imagen PNG)
+async function generarReporteOT(){
+  const conOt=registros.filter(r=>r.ot);
+  if(!conOt.length){ alert('Aún no hay OT registradas. Agrega un N° de OT al crear una inspección.'); return; }
+  const enProd=conOt.filter(r=>(r.otEstado||'produccion')==='produccion');
+  const entregadas=conOt.filter(r=>r.otEstado==='entregada');
+
+  const rowHtml=r=>`<div class="otr-row">
+    ${r.fotos?.length?`<img class="otr-thumb" src="${r.fotos[0]}">`:'<div class="otr-thumb-empty">📦</div>'}
+    <div class="otr-info">
+      <div class="otr-ot">🗂️ ${r.ot}</div>
+      <div class="otr-prod">${r.producto||'—'}</div>
+      <div class="otr-meta">${[r.area,r.operario].filter(Boolean).join(' · ')}</div>
+    </div>
+    <span class="${bclass(r.estado)}">${r.estado}</span>
+  </div>`;
+
+  const el=document.createElement('div');
+  el.id='ot-report';
+  el.innerHTML=`
+    <div class="otr-header"><h2>Control de <span>Calidad QC</span></h2><p>Reporte de estado de OT · ${new Date().toLocaleDateString()}</p></div>
+    <div class="otr-section-title" style="color:#fbbf24">🏭 En producción (${enProd.length})</div>
+    ${enProd.length?enProd.map(rowHtml).join(''):'<div class="otr-empty">Sin OT en producción</div>'}
+    <div class="otr-section-title" style="color:#34d399">📦 Entregadas (${entregadas.length})</div>
+    ${entregadas.length?entregadas.map(rowHtml).join(''):'<div class="otr-empty">Sin OT entregadas</div>'}
+    <div class="otr-footer">Generado por Control de Calidad QC</div>`;
+  document.body.appendChild(el);
+  try{
+    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
+    const url=canvas.toDataURL('image/png');
+    const a=document.createElement('a');a.href=url;a.download=`Reporte_OT_${new Date().toISOString().split('T')[0]}.png`;a.click();
+  } finally {
+    document.body.removeChild(el);
+  }
 }
 
 function resolverRetrabajo(regId,idx){
@@ -1006,13 +1092,14 @@ function renderDet(){
   const otrosBtns=['Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
   panel.innerHTML=`<div class="det-box">
     <div class="det-hdr"><div style="font-weight:900;font-size:14px">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?`<span class="badge" style="${r.otEstado==='entregada'?'background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3)':'background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)'}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`:''}</div>
     ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds'],['Comentarios',r.comentarios||'—']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
     <div style="margin-top:9px"><div class="sec-title">Checklist</div><div class="ck-tags">${ckTags}</div></div>
     ${defHtml}${retHtml}${fotosHtml}${histHtml}
     <button class="add-ret-btn" onclick="this.style.display='none';document.getElementById('arf-${r.id}').style.display='block'">+ Retrabajo post-entrega</button>
     ${buildAddRetForm(r.id)}
     <div class="cambio-estado"><p>Cambiar estado</p><div class="cambio-btns">${otrosBtns}</div></div>
+    ${otBtnsHtml(r)}
     <div class="monday-badge"><p>📌 MONDAY.COM</p><p>Listo para sincronizar</p></div>
   </div>`;
   const arf=document.getElementById('arf-'+r.id);if(arf)arf.style.display='none';
