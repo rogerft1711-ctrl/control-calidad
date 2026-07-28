@@ -455,7 +455,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
       <!-- PASO 2: CHECKLIST -->
       <div class="wizard-page" id="wp-1">
         <div class="ck-box">
-          <div class="ck-header"><div><div class="flabel" style="margin-bottom:2px">Checklist · Mueble Checkout</div><div id="ck-summary" style="font-size:10px;color:var(--dim)">0 ✓ · 0 ✕ · 0 N/A · 17 pendientes</div></div><div class="ck-pct" id="ck-pct">0%</div></div>
+          <div class="ck-header"><div><div class="flabel" style="margin-bottom:2px">Checklist · Mueble Checkout</div><div id="ck-summary" style="font-size:10px;color:var(--dim)">0 ✓ · 0 ✕ · 0 N/A · 18 pendientes</div></div><div class="ck-pct" id="ck-pct">0%</div></div>
           <div class="prog-bar"><div class="prog-fill" id="ck-bar" style="width:0%"></div></div>
           <button class="ck-all-btn" onclick="aprobarTodo()">✓ Aprobar todos los ítems</button>
           <div id="ck-rows"></div>
@@ -681,7 +681,7 @@ try {
     console.log('Migrado desde v1');
   }
 } catch(e) { registros = []; }
-const CHECKLIST = ["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Vidrios","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"];
+const CHECKLIST = ["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Vidrios","Estructura metálica","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Dimensiones"];
 CHECKLIST.forEach(k => formChecklist[k] = null);
 document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
 
