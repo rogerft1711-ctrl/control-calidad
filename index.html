@@ -414,7 +414,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
           <div><label class="flabel">Fecha</label><input class="finput" id="f-fecha" type="date" onchange="checkStep1()"></div>
           <div><label class="flabel">Cantidad</label><input class="finput" id="f-cantidad" type="number" placeholder="0" oninput="checkStep1()"></div>
         </div>
-        <div class="fg"><label class="flabel">N° de OT (opcional)</label><input class="finput" id="f-ot" placeholder="Ej: OT-1042"></div>
+        <div class="fg"><label class="flabel">N° de OT (opcional)</label><input class="finput" id="f-ot" placeholder="Ej: 1042" inputmode="numeric" pattern="[0-9]*"></div>
         <div class="fg"><label class="flabel">Estado de la OT</label>
           <div class="estado-btns">
             <button class="ebtn" id="otb-prod" onclick="setOtEstado('produccion')">🏭 En producción</button>
