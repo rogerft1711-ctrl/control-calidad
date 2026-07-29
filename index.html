@@ -643,56 +643,74 @@ let regShownCount = REG_PAGE;
 let formFotos = [], formChecklist = {}, formDefectos = [], formEstado = '', formOtEstado = 'produccion';
 let selectedMonth = 'all', wizardStep = 0;
 
-try {
-  // Migrate from any previous version
-  const v5 = localStorage.getItem('qc_v5');
-  const v4 = localStorage.getItem('qc_v4');
-  const v3 = localStorage.getItem('qc_v3');
-  const v2 = localStorage.getItem('qc_v2');
-  const v1 = localStorage.getItem('qc_registros');
+// ── ALMACENAMIENTO (IndexedDB — sin el limite de ~5-10MB de localStorage)
+let dbPromise = null;
+function openDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve,reject)=>{
+    const req = indexedDB.open('qc_db', 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+function idbSet(key,value){
+  return openDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('kv','readwrite');
+    tx.objectStore('kv').put(value,key);
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>reject(tx.error);
+  }));
+}
+function idbGet(key){
+  return openDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction('kv','readonly');
+    const req=tx.objectStore('kv').get(key);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  }));
+}
 
-  if(v5) {
-    registros = JSON.parse(v5);
-  } else if(v4) {
-    registros = JSON.parse(v4);
-    // Migrate defectos from string array to object array
-    registros = registros.map(r=>({
-      ...r,
-      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
-    }));
-    localStorage.setItem('qc_v5', JSON.stringify(registros));
-    localStorage.removeItem('qc_v4');
-    console.log('Migrado desde v4');
-  } else if(v3) {
-    registros = JSON.parse(v3);
-    registros = registros.map(r=>({
-      ...r,
-      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
-    }));
-    localStorage.setItem('qc_v5', JSON.stringify(registros));
-    localStorage.removeItem('qc_v3');
-    console.log('Migrado desde v3');
-  } else if(v2) {
-    registros = JSON.parse(v2);
-    registros = registros.map(r=>({
-      ...r,
-      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
-    }));
-    localStorage.setItem('qc_v5', JSON.stringify(registros));
-    localStorage.removeItem('qc_v2');
-    console.log('Migrado desde v2');
-  } else if(v1) {
-    registros = JSON.parse(v1);
-    registros = registros.map(r=>({
-      ...r,
-      defectos:(r.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)
-    }));
-    localStorage.setItem('qc_v5', JSON.stringify(registros));
-    localStorage.removeItem('qc_registros');
-    console.log('Migrado desde v1');
+function migrarRegistrosDesdeLocalStorage(){
+  try {
+    const v5 = localStorage.getItem('qc_v5');
+    const v4 = localStorage.getItem('qc_v4');
+    const v3 = localStorage.getItem('qc_v3');
+    const v2 = localStorage.getItem('qc_v2');
+    const v1 = localStorage.getItem('qc_registros');
+    let r=[];
+    if(v5) { r = JSON.parse(v5); }
+    else if(v4) { r = JSON.parse(v4).map(x=>({...x,defectos:(x.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)})); }
+    else if(v3) { r = JSON.parse(v3).map(x=>({...x,defectos:(x.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)})); }
+    else if(v2) { r = JSON.parse(v2).map(x=>({...x,defectos:(x.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)})); }
+    else if(v1) { r = JSON.parse(v1).map(x=>({...x,defectos:(x.defectos||[]).map(d=>typeof d==='string'?{nombre:d,severidad:'mayor'}:d)})); }
+    return r;
+  } catch(e) { return []; }
+}
+
+async function cargarDatos(){
+  try{
+    const idbReg = await idbGet('registros');
+    if(idbReg){ registros = idbReg; }
+    else {
+      registros = migrarRegistrosDesdeLocalStorage();
+      if(registros.length) idbSet('registros', registros).catch(()=>{});
+    }
+  }catch(e){ registros = migrarRegistrosDesdeLocalStorage(); }
+
+  try{
+    const idbPap = await idbGet('papelera');
+    if(idbPap){ papelera = idbPap; }
+    else {
+      try{ papelera = JSON.parse(localStorage.getItem('qc_papelera')||'[]'); }catch(e){ papelera = []; }
+      if(papelera.length) idbSet('papelera', papelera).catch(()=>{});
+    }
+  }catch(e){
+    try{ papelera = JSON.parse(localStorage.getItem('qc_papelera')||'[]'); }catch(e2){ papelera = []; }
   }
-} catch(e) { registros = []; }
-try { papelera = JSON.parse(localStorage.getItem('qc_papelera')||'[]'); } catch(e) { papelera = []; }
+}
+
 const PAPELERA_DIAS = 10;
 const CHECKLIST =["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Vidrios","Estructura metálica","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Ruedas","Dimensiones"];
 CHECKLIST.forEach(k => formChecklist[k] = null);
@@ -703,17 +721,23 @@ document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0
   const sel = document.getElementById(id);
   Object.keys(AREAS).forEach(a => { const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o); });
 });
-limpiarPapeleraVencida();
-buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar(); setOtEstado('produccion');
+cargarDatos().then(()=>{
+  limpiarPapeleraVencida();
+  buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar(); setOtEstado('produccion');
+});
 
 function save(){
-  try{ localStorage.setItem('qc_v5',JSON.stringify(registros)); return true; }
-  catch(e){ alert('⚠️ Almacenamiento lleno: no se pudo guardar. Borra fotos o registros antiguos para liberar espacio.'); return false; }
+  idbSet('registros', registros).catch(e=>{
+    alert('⚠️ No se pudo guardar en el almacenamiento del dispositivo. Vuelve a intentarlo; si persiste, exporta un respaldo cuanto antes.');
+  });
+  return true;
 }
 
 function savePapelera(){
-  try{ localStorage.setItem('qc_papelera',JSON.stringify(papelera)); return true; }
-  catch(e){ alert('⚠️ Almacenamiento lleno: no se pudo actualizar la papelera.'); return false; }
+  idbSet('papelera', papelera).catch(e=>{
+    alert('⚠️ No se pudo actualizar la papelera en el almacenamiento del dispositivo.');
+  });
+  return true;
 }
 
 function limpiarPapeleraVencida(){
