@@ -498,7 +498,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
       <div id="registros-normal-ui">
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" placeholder="Buscar producto, operario, área..." oninput="renderRegistros()">
+          <input type="text" id="search-input" placeholder="Buscar OT, producto, operario, área..." oninput="renderRegistros()">
         </div>
         <div class="filtro-bar">
           <button class="fbtn active" onclick="setFiltro('Todos',this)">Todos</button>
@@ -1114,7 +1114,7 @@ function renderRegistros(){
   let data=registros;
   if(filtro==='Retrabajo') data=data.filter(r=>r.retrabajos?.length);
   else if(filtro!=='Todos') data=data.filter(r=>r.estado===filtro);
-  if(q) data=data.filter(r=>(r.producto||'').toLowerCase().includes(q)||(r.operario||'').toLowerCase().includes(q)||(r.area||'').toLowerCase().includes(q));
+  if(q) data=data.filter(r=>(r.producto||'').toLowerCase().includes(q)||(r.operario||'').toLowerCase().includes(q)||(r.area||'').toLowerCase().includes(q)||(r.ot||'').toLowerCase().includes(q));
   document.getElementById('reg-count').textContent=data.length+' items';
   const list=document.getElementById('reg-list');
   if(!data.length){list.innerHTML='<div class="empty"><div class="emo">📭</div><p>Sin resultados</p></div>';return;}
