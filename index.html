@@ -493,7 +493,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
         <div class="page-title" style="margin:0" id="reg-title">Registros</div>
         <span id="reg-count" style="font-size:11px;color:var(--dim)">0 items</span>
       </div>
-      <button class="export-btn" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)" onclick="generarReporteOT()" id="reporte-ot-btn">🖼️ Reporte de OT (imagen)</button>
+      <button class="export-btn" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)" onclick="generarReporteOT()" id="reporte-ot-btn">📄 Reporte de OT (PDF)</button>
       <button onclick="togglePapelera()" id="papelera-toggle-btn" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px">🗑️ Papelera (<span id="papelera-count">0</span>)</button>
       <div id="registros-normal-ui">
         <div class="search-bar">
@@ -1194,7 +1194,7 @@ function cambiarOtEstado(id,e){
   save();renderDet();renderRegistros();
 }
 
-// ── REPORTE DE OT (imagen PNG)
+// ── REPORTE DE OT (PDF multipagina, para no recomprimirse al compartir)
 async function generarReporteOT(){
   const conOt=registros.filter(r=>r.ot);
   if(!conOt.length){ alert('Aún no hay OT registradas. Agrega un N° de OT al crear una inspección.'); return; }
@@ -1222,9 +1222,24 @@ async function generarReporteOT(){
     <div class="otr-footer">Generado por Control de Calidad QC</div>`;
   document.body.appendChild(el);
   try{
-    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:1});
-    const url=canvas.toDataURL('image/png');
-    const a=document.createElement('a');a.href=url;a.download=`Reporte_OT_${new Date().toISOString().split('T')[0]}.png`;a.click();
+    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
+    const{jsPDF}=window.jspdf;
+    const pdfW=100;
+    const pageHeightPx=1600;
+    const totalPages=Math.max(1,Math.ceil(canvas.height/pageHeightPx));
+    let pdf=null;
+    for(let i=0;i<totalPages;i++){
+      const sliceH=Math.min(pageHeightPx,canvas.height-i*pageHeightPx);
+      const sliceCanvas=document.createElement('canvas');
+      sliceCanvas.width=canvas.width; sliceCanvas.height=sliceH;
+      sliceCanvas.getContext('2d').drawImage(canvas,0,i*pageHeightPx,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      const imgData=sliceCanvas.toDataURL('image/png');
+      const pageHmm=(sliceH*pdfW)/canvas.width;
+      if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
+      else pdf.addPage([pdfW,pageHmm],'p');
+      pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+    }
+    pdf.save(`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
   } finally {
     document.body.removeChild(el);
   }
