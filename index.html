@@ -1274,7 +1274,8 @@ function cambiarOtEstado(id,e){
 async function generarReporteOT(){
   const conOt=registros.filter(r=>r.ot);
   if(!conOt.length){ alert('Aún no hay OT registradas. Agrega un N° de OT al crear una inspección.'); return; }
-  const enProd=conOt.filter(r=>(r.otEstado||'produccion')==='produccion');
+  const enProdPendiente=conOt.filter(r=>(r.otEstado||'produccion')==='produccion'&&r.estado!=='Aprobado');
+  const enProdAprobado=conOt.filter(r=>(r.otEstado||'produccion')==='produccion'&&r.estado==='Aprobado');
   const entregadas=conOt.filter(r=>r.otEstado==='entregada');
 
   const rowHtml=r=>`<div class="otr-row">
@@ -1289,9 +1290,12 @@ async function generarReporteOT(){
   </div>`;
 
   const blocks=[];
-  blocks.push({t:'section',label:`🏭 En producción (${enProd.length})`,color:'#fbbf24'});
-  if(!enProd.length) blocks.push({t:'empty',text:'Sin OT en producción'});
-  enProd.forEach(r=>blocks.push({t:'row',r}));
+  blocks.push({t:'section',label:`🏭 En producción · Pendiente (${enProdPendiente.length})`,color:'#fbbf24'});
+  if(!enProdPendiente.length) blocks.push({t:'empty',text:'Sin OT pendientes en producción'});
+  enProdPendiente.forEach(r=>blocks.push({t:'row',r}));
+  blocks.push({t:'section',label:`✅ En producción · Aprobado (${enProdAprobado.length})`,color:'#34d399'});
+  if(!enProdAprobado.length) blocks.push({t:'empty',text:'Sin OT aprobadas en producción'});
+  enProdAprobado.forEach(r=>blocks.push({t:'row',r}));
   blocks.push({t:'section',label:`📦 Entregadas (${entregadas.length})`,color:'#34d399'});
   if(!entregadas.length) blocks.push({t:'empty',text:'Sin OT entregadas'});
   entregadas.forEach(r=>blocks.push({t:'row',r}));
