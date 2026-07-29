@@ -177,13 +177,13 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
 .filtro-bar{display:flex;gap:5px;margin-bottom:10px;overflow-x:auto;padding-bottom:3px}
 .fbtn{white-space:nowrap;padding:5px 11px;border-radius:99px;border:1px solid rgba(255,255,255,0.1);font-size:10px;cursor:pointer;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif}
 .fbtn.active{border-color:var(--green);background:rgba(110,231,183,0.1);color:var(--green);font-weight:700}
-.reg-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:11px;margin-bottom:6px;cursor:pointer}
+.reg-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:14px;margin-bottom:9px;cursor:pointer}
 .reg-item.sel{background:rgba(110,231,183,0.05);border-color:rgba(110,231,183,0.2)}
 .reg-item.has-ret{border-left:3px solid var(--orange)}
 .reg-top{display:flex;justify-content:space-between;align-items:flex-start}
-.reg-name{font-weight:700;font-size:13px}
-.reg-meta{font-size:10px;color:rgba(255,255,255,0.35);margin:2px 0 3px}
-.reg-counts{display:flex;gap:6px;font-size:10px;flex-wrap:wrap}
+.reg-name{font-weight:700;font-size:16px}
+.reg-meta{font-size:12px;color:rgba(255,255,255,0.4);margin:3px 0 4px}
+.reg-counts{display:flex;gap:8px;font-size:11px;flex-wrap:wrap}
 /* DETALLE */
 .det-box{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:17px;padding:13px;margin-bottom:10px}
 .det-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
@@ -1145,9 +1145,9 @@ function renderRegistros(){
       <div class="reg-top">
         <div>
           <div class="reg-name">${r.producto}</div>
-          ${r.ot?`<div style="font-size:14px;font-weight:900;color:#60a5fa;margin:2px 0">🗂️ OT ${r.ot} <span style="font-size:11px;font-weight:800;color:${otColor(r).fg}">· ${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span></div>`:''}
+          ${r.ot?`<div style="font-size:16px;font-weight:900;color:#60a5fa;margin:3px 0">🗂️ OT ${r.ot} <span style="font-size:12px;font-weight:800;color:${otColor(r).fg}">· ${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span></div>`:''}
           <div class="reg-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha} · ${r.cantidad} uds</div>
-          ${r.comentarios?`<div style="font-size:11px;color:rgba(255,255,255,0.5);font-style:italic;margin:3px 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">💬 ${r.comentarios}</div>`:''}
+          ${r.comentarios?`<div style="font-size:12px;color:rgba(255,255,255,0.5);font-style:italic;margin:4px 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">💬 ${r.comentarios}</div>`:''}
           <div class="reg-counts">
             <span style="color:#34d399">✓ ${okC}</span><span style="color:#f87171">✕ ${failC}</span>
             ${crit?`<span style="color:#fca5a5">🔴 ${crit} crítico(s)</span>`:''}
@@ -1155,7 +1155,7 @@ function renderRegistros(){
             ${r.retrabajos?.length?`<span style="color:#fdba74">🔧 ${r.retrabajos.length}</span>`:''}
           </div>
         </div>
-        <span class="${bclass(r.estado)}">${r.estado}</span>
+        <span class="${bclass(r.estado)}" style="font-size:11px;padding:4px 10px">${r.estado}</span>
       </div>
     </div>`;
   }).join('') + (data.length>regShownCount?`<button onclick="cargarMasRegistros()" class="dash-see-all">Cargar más (${data.length-regShownCount} restantes)</button>`:'');
