@@ -490,25 +490,28 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
     <!-- REGISTROS -->
     <div id="tab-registros" class="tab-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="page-title" style="margin:0">Registros</div>
+        <div class="page-title" style="margin:0" id="reg-title">Registros</div>
         <span id="reg-count" style="font-size:11px;color:var(--dim)">0 items</span>
       </div>
-      <button class="export-btn" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)" onclick="generarReporteOT()">🖼️ Reporte de OT (imagen)</button>
-      <div class="search-bar">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="search-input" placeholder="Buscar producto, operario, área..." oninput="renderRegistros()">
-      </div>
-      <div class="filtro-bar">
-        <button class="fbtn active" onclick="setFiltro('Todos',this)">Todos</button>
-        <button class="fbtn" onclick="setFiltro('Pendiente',this)">⏳ Pendiente</button>
-        <button class="fbtn" onclick="setFiltro('Aprobado',this)">✅ Ok</button>
-        <button class="fbtn" onclick="setFiltro('Rechazado',this)">❌ Rechazado</button>
-        <button class="fbtn" onclick="setFiltro('En revisión',this)">🔄 Revisión</button>
-        <button class="fbtn" onclick="setFiltro('Retrabajo',this)">🔧 Retrabajo</button>
+      <button class="export-btn" style="background:linear-gradient(135deg,#60a5fa,#3b82f6)" onclick="generarReporteOT()" id="reporte-ot-btn">🖼️ Reporte de OT (imagen)</button>
+      <button onclick="togglePapelera()" id="papelera-toggle-btn" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px">🗑️ Papelera (<span id="papelera-count">0</span>)</button>
+      <div id="registros-normal-ui">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Buscar producto, operario, área..." oninput="renderRegistros()">
+        </div>
+        <div class="filtro-bar">
+          <button class="fbtn active" onclick="setFiltro('Todos',this)">Todos</button>
+          <button class="fbtn" onclick="setFiltro('Pendiente',this)">⏳ Pendiente</button>
+          <button class="fbtn" onclick="setFiltro('Aprobado',this)">✅ Ok</button>
+          <button class="fbtn" onclick="setFiltro('Rechazado',this)">❌ Rechazado</button>
+          <button class="fbtn" onclick="setFiltro('En revisión',this)">🔄 Revisión</button>
+          <button class="fbtn" onclick="setFiltro('Retrabajo',this)">🔧 Retrabajo</button>
+        </div>
       </div>
       <div id="det-panel"></div>
       <div id="reg-list"></div>
-      <div style="text-align:center;margin-top:16px">
+      <div style="text-align:center;margin-top:16px" id="borrar-todo-wrap">
         <button onclick="borrarTodo()" style="background:none;border:none;color:rgba(248,113,113,0.5);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">🗑️ Borrar todos los registros</button>
       </div>
     </div>
@@ -628,7 +631,7 @@ let bonoEscala = [
   {min:0,  max:59, pct:0,  label:"Sin bono"}
 ];
 
-let registros = [], kpiTab = 'op', filtro = 'Todos', detalleId = null;
+let registros = [], papelera = [], kpiTab = 'op', filtro = 'Todos', detalleId = null, viewingPapelera = false;
 let formFotos = [], formChecklist = {}, formDefectos = [], formEstado = '', formOtEstado = 'produccion';
 let selectedMonth = 'all', wizardStep = 0;
 
@@ -681,7 +684,9 @@ try {
     console.log('Migrado desde v1');
   }
 } catch(e) { registros = []; }
-const CHECKLIST = ["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Vidrios","Estructura metálica","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Ruedas","Dimensiones"];
+try { papelera = JSON.parse(localStorage.getItem('qc_papelera')||'[]'); } catch(e) { papelera = []; }
+const PAPELERA_DIAS = 10;
+const CHECKLIST =["Cubierta","Tapacantos","Bandejas","Costillas","Rejilla","Barras","Ranuras","Flejera","TDA","LEDs","Difusores","Vidrios","Estructura metálica","Enchufes","Corean (si amerita)","Logo acrílico","Patines","Ruedas","Dimensiones"];
 CHECKLIST.forEach(k => formChecklist[k] = null);
 document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
 
@@ -690,11 +695,60 @@ document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0
   const sel = document.getElementById(id);
   Object.keys(AREAS).forEach(a => { const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o); });
 });
+limpiarPapeleraVencida();
 buildChecklist(); buildDefects(''); renderDashboard(); renderRegistros(); renderKpis(); buildMonthBar(); setOtEstado('produccion');
 
 function save(){
   try{ localStorage.setItem('qc_v5',JSON.stringify(registros)); return true; }
   catch(e){ alert('⚠️ Almacenamiento lleno: no se pudo guardar. Borra fotos o registros antiguos para liberar espacio.'); return false; }
+}
+
+function savePapelera(){
+  try{ localStorage.setItem('qc_papelera',JSON.stringify(papelera)); return true; }
+  catch(e){ alert('⚠️ Almacenamiento lleno: no se pudo actualizar la papelera.'); return false; }
+}
+
+function limpiarPapeleraVencida(){
+  const antes=papelera.length;
+  papelera=papelera.filter(r=>diasEntre(r.eliminadoFecha,new Date().toISOString())<PAPELERA_DIAS);
+  if(papelera.length!==antes) savePapelera();
+}
+
+function eliminarRegistro(id){
+  if(!confirm('¿Eliminar este registro? Quedará en la papelera '+PAPELERA_DIAS+' días antes de borrarse definitivamente.'))return;
+  const i=registros.findIndex(x=>x.id===id);if(i===-1)return;
+  const [r]=registros.splice(i,1);
+  r.eliminadoFecha=new Date().toISOString();
+  papelera.unshift(r);
+  detalleId=null;
+  save(); savePapelera(); renderDet(); renderRegistros(); renderDashboard(); renderKpis();
+}
+
+function restaurarRegistro(id){
+  const i=papelera.findIndex(x=>x.id===id);if(i===-1)return;
+  const [r]=papelera.splice(i,1);
+  delete r.eliminadoFecha;
+  registros.unshift(r);
+  save(); savePapelera(); renderRegistros(); renderDashboard(); renderKpis();
+}
+
+function eliminarDefinitivo(id){
+  if(!confirm('¿Eliminar definitivamente este registro? Esta acción no se puede deshacer.'))return;
+  papelera=papelera.filter(x=>x.id!==id);
+  savePapelera(); renderRegistros();
+}
+
+function togglePapelera(){
+  viewingPapelera=!viewingPapelera;
+  limpiarPapeleraVencida();
+  document.getElementById('registros-normal-ui').style.display=viewingPapelera?'none':'block';
+  document.getElementById('borrar-todo-wrap').style.display=viewingPapelera?'none':'block';
+  document.getElementById('reporte-ot-btn').style.display=viewingPapelera?'none':'flex';
+  document.getElementById('reg-title').textContent=viewingPapelera?'Papelera':'Registros';
+  document.getElementById('papelera-toggle-btn').innerHTML=viewingPapelera?'← Volver a registros':'🗑️ Papelera (<span id="papelera-count">'+papelera.length+'</span>)';
+  detalleId=null;
+  document.getElementById('det-panel').innerHTML='';
+  renderRegistros();
 }
 
 function borrarTodo(){
@@ -1054,6 +1108,8 @@ function renderDashboard(){
 function setFiltro(f,btn){filtro=f;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRegistros();}
 
 function renderRegistros(){
+  const pc=document.getElementById('papelera-count'); if(pc) pc.textContent=papelera.length;
+  if(viewingPapelera){ renderPapeleraList(); return; }
   const q=(document.getElementById('search-input')?.value||'').toLowerCase().trim();
   let data=registros;
   if(filtro==='Retrabajo') data=data.filter(r=>r.retrabajos?.length);
@@ -1079,6 +1135,31 @@ function renderRegistros(){
           </div>
         </div>
         <span class="${bclass(r.estado)}">${r.estado}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPapeleraList(){
+  document.getElementById('reg-count').textContent=papelera.length+' items';
+  const list=document.getElementById('reg-list');
+  if(!papelera.length){list.innerHTML='<div class="empty"><div class="emo">🗑️</div><p>La papelera está vacía</p></div>';return;}
+  list.innerHTML=papelera.map(r=>{
+    const dias=diasEntre(r.eliminadoFecha,new Date().toISOString());
+    const restantes=Math.max(0,PAPELERA_DIAS-dias);
+    return`<div class="reg-item">
+      <div class="reg-top">
+        <div>
+          <div class="reg-name">${r.producto}</div>
+          ${r.ot?`<div style="font-size:13px;font-weight:800;color:#60a5fa;margin:2px 0">🗂️ OT ${r.ot}</div>`:''}
+          <div class="reg-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha}</div>
+          <div class="reg-meta" style="color:#f87171">🗑️ Se elimina definitivamente en ${restantes} día(s)</div>
+        </div>
+        <span class="${bclass(r.estado)}">${r.estado}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button onclick="restaurarRegistro('${r.id}')" style="flex:1;padding:8px;border-radius:9px;border:none;cursor:pointer;background:rgba(52,211,153,0.2);color:#34d399;font-weight:700;font-size:11px;font-family:'DM Sans',sans-serif">♻️ Restaurar</button>
+        <button onclick="eliminarDefinitivo('${r.id}')" style="flex:1;padding:8px;border-radius:9px;border:none;cursor:pointer;background:rgba(248,113,113,0.2);color:#f87171;font-weight:700;font-size:11px;font-family:'DM Sans',sans-serif">🗑️ Eliminar ahora</button>
       </div>
     </div>`;
   }).join('');
@@ -1141,7 +1222,7 @@ async function generarReporteOT(){
     <div class="otr-footer">Generado por Control de Calidad QC</div>`;
   document.body.appendChild(el);
   try{
-    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
+    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:1});
     const url=canvas.toDataURL('image/png');
     const a=document.createElement('a');a.href=url;a.download=`Reporte_OT_${new Date().toISOString().split('T')[0]}.png`;a.click();
   } finally {
@@ -1239,6 +1320,7 @@ function renderDet(){
     <div class="cambio-estado"><p>Cambiar estado</p><div class="cambio-btns">${otrosBtns}</div></div>
     ${otBtnsHtml(r)}
     <div class="monday-badge"><p>📌 MONDAY.COM</p><p>Listo para sincronizar</p></div>
+    <button onclick="eliminarRegistro('${r.id}')" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(248,113,113,0.3);background:rgba(248,113,113,0.08);color:#f87171;font-weight:700;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:10px">🗑️ Eliminar registro</button>
   </div>`;
   const arf=document.getElementById('arf-'+r.id);if(arf)arf.style.display='none';
 }
