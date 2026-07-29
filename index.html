@@ -1277,6 +1277,32 @@ function resolverRetrabajo(regId,idx){
   save();renderDet();renderRegistros();
 }
 
+function updateOtNumero(id,val){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  const otNum=val.trim();
+  r.ot=otNum;
+  if(otNum&&!r.otEstado) r.otEstado='produccion';
+  if(!otNum) r.otEstado='';
+  save(); renderDet(); renderRegistros(); renderDashboard();
+}
+
+async function addFotoAvance(id,input){
+  const files=Array.from(input.files); input.value='';
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  r.fotos=r.fotos||[];
+  for(const f of files){
+    try{ r.fotos.push(await resizeImage(f,1280,0.7)); }
+    catch(e){ alert('No se pudo procesar una de las fotos.'); }
+  }
+  save(); renderDet(); renderRegistros();
+}
+
+function rmFotoRegistro(id,idx){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  r.fotos.splice(idx,1);
+  save(); renderDet(); renderRegistros();
+}
+
 function updateComentario(id,val){
   const r=registros.find(x=>x.id===id);if(!r)return;
   r.comentarios=val;
@@ -1332,7 +1358,14 @@ function renderDet(){
   if(!detalleId){panel.innerHTML='';return;}
   const r=registros.find(x=>x.id===detalleId);if(!r){panel.innerHTML='';return;}
   const defHtml=(r.defectos||[]).length?`<div style="margin-top:9px"><div class="sec-title">Defectos</div><div style="display:flex;flex-wrap:wrap;gap:5px">${r.defectos.map(d=>{const cls=d.severidad==='critico'?'cktag-fail':d.severidad==='mayor'?'b-ret':'';return`<span class="cktag ${cls}">${d.severidad==='critico'?'🔴':d.severidad==='mayor'?'🟠':'🟡'} ${d.nombre||d}</span>`;}).join('')}</div></div>`:'';
-  const fotosHtml=r.fotos?.length?`<div style="margin-top:9px"><div class="sec-title">Fotos (${r.fotos.length})</div><div class="foto-grid">${r.fotos.map(s=>`<img src="${s}" style="width:100%;height:80px;object-fit:cover;border-radius:9px;cursor:pointer" onclick="openLB('${s}')">`).join('')}</div></div>`:'';
+  const fotosHtml=`<div style="margin-top:9px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><div class="sec-title" style="margin:0">Fotos de avance (${r.fotos?.length||0})</div></div>
+    ${r.fotos?.length?`<div class="foto-grid">${r.fotos.map((s,i)=>`<div class="foto-item"><img src="${s}" onclick="openLB('${s}')"><button class="foto-rm" onclick="rmFotoRegistro('${r.id}',${i})">✕</button></div>`).join('')}</div>`:''}
+    <div style="display:flex;gap:6px;margin-top:7px">
+      <label class="foto-label" style="flex:1"><span style="font-size:17px">📸</span> Cámara<input type="file" accept="image/*" capture="environment" style="display:none" onchange="addFotoAvance('${r.id}',this)"></label>
+      <label class="foto-label" style="flex:1"><span style="font-size:17px">🖼️</span> Galería<input type="file" accept="image/*" multiple style="display:none" onchange="addFotoAvance('${r.id}',this)"></label>
+    </div>
+  </div>`;
   const retHtml=(r.retrabajos||[]).map((rt,i)=>{
     const dias=diasEntre(rt.fecha,rt.fechaResolucion);
     const timer=rt.fechaResolucion?`<div class="ret-resolved">✅ Resuelto en ${dias} día(s)</div>`:`<div class="ret-timer">⏱ ${diasEntre(rt.fecha,new Date().toISOString())}d pendiente</div>`;
@@ -1353,6 +1386,7 @@ function renderDet(){
     <div class="det-hdr"><div style="font-weight:900;font-size:14px;cursor:pointer" onclick="toggleDet('${r.id}')">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`;})():''}</div>
     ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
+    <div class="fg" style="margin-top:9px"><label class="flabel">N° de OT</label><input class="finput" value="${r.ot||''}" placeholder="Ej: 1042" inputmode="numeric" pattern="[0-9]*" onblur="updateOtNumero('${r.id}',this.value)"></div>
     <div class="fg" style="margin-top:9px"><label class="flabel">Comentarios</label><textarea class="finput" rows="2" placeholder="Sin comentarios" onblur="updateComentario('${r.id}',this.value)">${r.comentarios||''}</textarea></div>
     ${renderDetChecklist(r)}
     ${defHtml}${retHtml}${fotosHtml}${histHtml}
