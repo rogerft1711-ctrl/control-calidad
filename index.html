@@ -515,7 +515,9 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
       </div>
       <div id="det-panel"></div>
       <div id="reg-list"></div>
-      <div style="text-align:center;margin-top:16px" id="borrar-todo-wrap">
+      <div style="text-align:center;margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap" id="borrar-todo-wrap">
+        <button onclick="exportarRespaldo()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:7px 13px;border-radius:9px">💾 Exportar respaldo</button>
+        <label style="background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:7px 13px;border-radius:9px">📂 Importar respaldo<input type="file" accept="application/json" style="display:none" onchange="importarRespaldo(this)"></label>
         <button onclick="borrarTodo()" style="background:none;border:none;color:rgba(248,113,113,0.5);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline">🗑️ Borrar todos los registros</button>
       </div>
     </div>
@@ -755,6 +757,32 @@ function togglePapelera(){
   detalleId=null;
   document.getElementById('det-panel').innerHTML='';
   renderRegistros();
+}
+
+function exportarRespaldo(){
+  const data=JSON.stringify({registros,papelera,exportado:new Date().toISOString()},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`Respaldo_QC_${new Date().toISOString().split('T')[0]}.json`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importarRespaldo(input){
+  const file=input.files[0]; input.value='';
+  if(!file) return;
+  if(!confirm('¿Importar este respaldo? Reemplazará todos los registros y la papelera de este dispositivo.')) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      registros=Array.isArray(data.registros)?data.registros:[];
+      papelera=Array.isArray(data.papelera)?data.papelera:[];
+      save(); savePapelera();
+      renderRegistros(); renderDashboard(); renderKpis(); buildMonthBar();
+      alert('Respaldo importado correctamente.');
+    }catch(e){ alert('El archivo no es un respaldo válido.'); }
+  };
+  reader.readAsText(file);
 }
 
 function borrarTodo(){
