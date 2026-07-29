@@ -379,6 +379,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
         </div>
       </div>
       <div id="alarm-section"></div>
+      <div id="retraso-section"></div>
       <div id="trend-section"></div>
       <div id="recent-sec" style="display:none">
         <div class="dash-section-title">Últimas inspecciones</div>
@@ -498,7 +499,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
       <div id="registros-normal-ui">
         <div class="search-bar">
           <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" placeholder="Buscar OT, producto, operario, área..." oninput="renderRegistros()">
+          <input type="text" id="search-input" placeholder="Buscar OT, producto, operario, área..." oninput="regShownCount=REG_PAGE;renderRegistros()">
         </div>
         <div class="filtro-bar">
           <button class="fbtn active" onclick="setFiltro('Todos',this)">Todos</button>
@@ -507,6 +508,8 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
           <button class="fbtn" onclick="setFiltro('Rechazado',this)">❌ Rechazado</button>
           <button class="fbtn" onclick="setFiltro('En revisión',this)">🔄 Revisión</button>
           <button class="fbtn" onclick="setFiltro('Retrabajo',this)">🔧 Retrabajo</button>
+          <button class="fbtn" onclick="setFiltro('OT-Produccion',this)">🏭 OT Producción</button>
+          <button class="fbtn" onclick="setFiltro('OT-Entregada',this)">📦 OT Entregada</button>
         </div>
       </div>
       <div id="det-panel"></div>
@@ -632,6 +635,8 @@ let bonoEscala = [
 ];
 
 let registros = [], papelera = [], kpiTab = 'op', filtro = 'Todos', detalleId = null, viewingPapelera = false;
+const REG_PAGE = 30;
+let regShownCount = REG_PAGE;
 let formFotos = [], formChecklist = {}, formDefectos = [], formEstado = '', formOtEstado = 'produccion';
 let selectedMonth = 'all', wizardStep = 0;
 
@@ -1102,10 +1107,22 @@ function renderDashboard(){
   const failing=Object.entries(ops).filter(([,d])=>d.total>=3&&Math.round((d.ok/d.total)*100)<META);
   const sec=document.getElementById('alarm-section');
   if(sec)sec.innerHTML=failing.length?`<div class="alarm-banner"><h3>🚨 Bajo el 90%</h3>${failing.map(([n,d])=>{const pct=Math.round((d.ok/d.total)*100);return`<div class="alarm-item"><div><div class="alarm-name">${n}</div><div class="alarm-sub">${d.area} · ${d.total} insp.</div></div><div class="alarm-pct">${pct}%</div></div>`;}).join('')}</div>`:'';
+  // Retrabajos atrasados
+  const RETRASO_DIAS=5;
+  const pendRets=[];
+  registros.forEach(r=>(r.retrabajos||[]).forEach(rt=>{
+    if(!rt.fechaResolucion){
+      const dias=diasEntre(rt.fecha,new Date().toISOString());
+      if(dias>=RETRASO_DIAS) pendRets.push({producto:r.producto,causaOp:rt.causaOp,causaArea:rt.causaArea,dias,regId:r.id});
+    }
+  }));
+  pendRets.sort((a,b)=>b.dias-a.dias);
+  const rs=document.getElementById('retraso-section');
+  if(rs)rs.innerHTML=pendRets.length?`<div class="alarm-banner"><h3>⏰ Retrabajos atrasados (${RETRASO_DIAS}+ días)</h3>${pendRets.map(p=>`<div class="alarm-item" style="cursor:pointer" onclick="switchTab('registros');showDet('${p.regId}')"><div><div class="alarm-name">${p.producto}</div><div class="alarm-sub">${[p.causaArea,p.causaOp].filter(Boolean).join(' · ')}</div></div><div class="alarm-pct">${p.dias}d</div></div>`).join('')}</div>`:'';
 }
 
 // ── REGISTROS
-function setFiltro(f,btn){filtro=f;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRegistros();}
+function setFiltro(f,btn){filtro=f;regShownCount=REG_PAGE;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderRegistros();}
 
 function renderRegistros(){
   const pc=document.getElementById('papelera-count'); if(pc) pc.textContent=papelera.length;
@@ -1113,12 +1130,15 @@ function renderRegistros(){
   const q=(document.getElementById('search-input')?.value||'').toLowerCase().trim();
   let data=registros;
   if(filtro==='Retrabajo') data=data.filter(r=>r.retrabajos?.length);
+  else if(filtro==='OT-Produccion') data=data.filter(r=>r.ot&&(r.otEstado||'produccion')==='produccion');
+  else if(filtro==='OT-Entregada') data=data.filter(r=>r.ot&&r.otEstado==='entregada');
   else if(filtro!=='Todos') data=data.filter(r=>r.estado===filtro);
   if(q) data=data.filter(r=>(r.producto||'').toLowerCase().includes(q)||(r.operario||'').toLowerCase().includes(q)||(r.area||'').toLowerCase().includes(q)||(r.ot||'').toLowerCase().includes(q));
   document.getElementById('reg-count').textContent=data.length+' items';
   const list=document.getElementById('reg-list');
   if(!data.length){list.innerHTML='<div class="empty"><div class="emo">📭</div><p>Sin resultados</p></div>';return;}
-  list.innerHTML=data.map(r=>{
+  const shown=data.slice(0,regShownCount);
+  list.innerHTML=shown.map(r=>{
     const ck=r.checklist||{},okC=Object.values(ck).filter(v=>v===true).length,failC=Object.values(ck).filter(v=>v===false).length;
     const crit=r.defectos?.filter(d=>d.severidad==='critico').length||0;
     return`<div class="reg-item${detalleId===r.id?' sel':''}${r.retrabajos?.length?' has-ret':''}" onclick="toggleDet('${r.id}')">
@@ -1138,8 +1158,10 @@ function renderRegistros(){
         <span class="${bclass(r.estado)}">${r.estado}</span>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + (data.length>regShownCount?`<button onclick="cargarMasRegistros()" class="dash-see-all">Cargar más (${data.length-regShownCount} restantes)</button>`:'');
 }
+
+function cargarMasRegistros(){ regShownCount+=REG_PAGE; renderRegistros(); }
 
 function renderPapeleraList(){
   document.getElementById('reg-count').textContent=papelera.length+' items';
@@ -1224,26 +1246,29 @@ async function generarReporteOT(){
   document.body.appendChild(el);
   try{
     const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
-    const{jsPDF}=window.jspdf;
-    const pdfW=100;
-    const pageHeightPx=1600;
-    const totalPages=Math.max(1,Math.ceil(canvas.height/pageHeightPx));
-    let pdf=null;
-    for(let i=0;i<totalPages;i++){
-      const sliceH=Math.min(pageHeightPx,canvas.height-i*pageHeightPx);
-      const sliceCanvas=document.createElement('canvas');
-      sliceCanvas.width=canvas.width; sliceCanvas.height=sliceH;
-      sliceCanvas.getContext('2d').drawImage(canvas,0,i*pageHeightPx,canvas.width,sliceH,0,0,canvas.width,sliceH);
-      const imgData=sliceCanvas.toDataURL('image/png');
-      const pageHmm=(sliceH*pdfW)/canvas.width;
-      if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
-      else pdf.addPage([pdfW,pageHmm],'p');
-      pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
-    }
-    pdf.save(`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
+    canvasToPagedPDF(canvas,`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
   } finally {
     document.body.removeChild(el);
   }
+}
+
+// Convierte un canvas alto en un PDF de varias paginas de tamano razonable
+function canvasToPagedPDF(canvas,filename,pdfW=100,pageHeightPx=1600){
+  const{jsPDF}=window.jspdf;
+  const totalPages=Math.max(1,Math.ceil(canvas.height/pageHeightPx));
+  let pdf=null;
+  for(let i=0;i<totalPages;i++){
+    const sliceH=Math.min(pageHeightPx,canvas.height-i*pageHeightPx);
+    const sliceCanvas=document.createElement('canvas');
+    sliceCanvas.width=canvas.width; sliceCanvas.height=sliceH;
+    sliceCanvas.getContext('2d').drawImage(canvas,0,i*pageHeightPx,canvas.width,sliceH,0,0,canvas.width,sliceH);
+    const imgData=sliceCanvas.toDataURL('image/png');
+    const pageHmm=(sliceH*pdfW)/canvas.width;
+    if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
+    else pdf.addPage([pdfW,pageHmm],'p');
+    pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+  }
+  pdf.save(filename);
 }
 
 function resolverRetrabajo(regId,idx){
@@ -1566,12 +1591,7 @@ async function generarReportePDF(){
   document.body.appendChild(el);
   try{
     const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
-    const imgData=canvas.toDataURL('image/png');
-    const{jsPDF}=window.jspdf;
-    const pdfW=210, pdfH=(canvas.height*pdfW)/canvas.width;
-    const pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pdfH]});
-    pdf.addImage(imgData,'PNG',0,0,pdfW,pdfH);
-    pdf.save(`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`);
+    canvasToPagedPDF(canvas,`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`,150,2200);
   } finally {
     document.body.removeChild(el);
   }
