@@ -942,8 +942,10 @@ function guardar(){
     comentarios:document.getElementById('f-comentarios').value,
     fotos:[...formFotos],
     historial:[{estado:formEstado,fecha:new Date().toISOString(),nota:'Registro inicial'}],
+    checklistHistorial:[],
     creado:new Date().toISOString()
   };
+  logChecklistProgress(nuevo);
   registros.unshift(nuevo);
   if(!save()){ registros.shift(); return; }
   // Reset
@@ -1153,11 +1155,60 @@ function resolverRetrabajo(regId,idx){
   save();renderDet();renderRegistros();
 }
 
+function updateComentario(id,val){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  r.comentarios=val;
+  save(); renderRegistros();
+}
+
+function logChecklistProgress(r){
+  const vals=CHECKLIST.map(k=>r.checklist?.[k]);
+  const ok=vals.filter(v=>v===true).length,fail=vals.filter(v=>v===false).length,na=vals.filter(v=>v==='na').length,tot=CHECKLIST.length;
+  const pct=Math.round(((ok+fail+na)/tot)*100);
+  r.checklistHistorial=r.checklistHistorial||[];
+  const last=r.checklistHistorial[r.checklistHistorial.length-1];
+  if(!last||last.pct!==pct) r.checklistHistorial.push({fecha:new Date().toISOString(),pct,ok,fail,na});
+}
+
+function toggleDetCk(id,item,val){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  r.checklist=r.checklist||{};
+  r.checklist[item]=r.checklist[item]===val?null:val;
+  logChecklistProgress(r);
+  save(); renderDet(); renderRegistros(); renderDashboard();
+}
+
+function renderDetChecklist(r){
+  r.checklist=r.checklist||{};
+  const vals=CHECKLIST.map(k=>r.checklist[k]);
+  const ok=vals.filter(v=>v===true).length,fail=vals.filter(v=>v===false).length,na=vals.filter(v=>v==='na').length,tot=CHECKLIST.length;
+  const pct=Math.round(((ok+fail+na)/tot)*100);
+  const rows=CHECKLIST.map(item=>{
+    const v=r.checklist[item];
+    const cls=v===true?' cok':v===false?' cfail':v==='na'?' cna':'';
+    const safe=item.replace(/'/g,"\\'");
+    return`<div class="ck-row${cls}"><span class="ck-name">${item}</span>
+      <div class="ckbtns">
+        <button class="ckb${v===true?' bok':''}" onclick="toggleDetCk('${r.id}','${safe}',true)">✓</button>
+        <button class="ckb${v===false?' bfail':''}" onclick="toggleDetCk('${r.id}','${safe}',false)">✕</button>
+        <button class="ckb ckb-na${v==='na'?' bna':''}" onclick="toggleDetCk('${r.id}','${safe}','na')">N/A</button>
+      </div>
+    </div>`;
+  }).join('');
+  const hist=r.checklistHistorial||[];
+  const histHtml=hist.length?`<div style="margin-top:9px"><div class="sec-title">Avance en el tiempo</div>${hist.map(h=>`<div class="hist-item">${new Date(h.fecha).toLocaleString()} → ${h.pct}% (${h.ok}✓ · ${h.fail}✕ · ${h.na} N/A)</div>`).join('')}</div>`:'';
+  return`<div class="ck-box" style="margin-top:9px">
+    <div class="ck-header"><div class="flabel" style="margin-bottom:2px">Checklist</div><div class="ck-pct">${pct}%</div></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+    ${rows}
+    ${histHtml}
+  </div>`;
+}
+
 function renderDet(){
   const panel=document.getElementById('det-panel');
   if(!detalleId){panel.innerHTML='';return;}
   const r=registros.find(x=>x.id===detalleId);if(!r){panel.innerHTML='';return;}
-  const ckTags=Object.keys(r.checklist||{}).filter(k=>CHECKLIST.includes(k)).map(item=>{const v=r.checklist[item];const cls=v===true?'cktag-ok':v===false?'cktag-fail':v==='na'?'cktag-na':'cktag-none';const lbl=v===true?'✓':v===false?'✕':v==='na'?'N/A':'·';return`<span class="cktag ${cls}">${lbl} ${item}</span>`;}).join('');
   const defHtml=(r.defectos||[]).length?`<div style="margin-top:9px"><div class="sec-title">Defectos</div><div style="display:flex;flex-wrap:wrap;gap:5px">${r.defectos.map(d=>{const cls=d.severidad==='critico'?'cktag-fail':d.severidad==='mayor'?'b-ret':'';return`<span class="cktag ${cls}">${d.severidad==='critico'?'🔴':d.severidad==='mayor'?'🟠':'🟡'} ${d.nombre||d}</span>`;}).join('')}</div></div>`:'';
   const fotosHtml=r.fotos?.length?`<div style="margin-top:9px"><div class="sec-title">Fotos (${r.fotos.length})</div><div class="foto-grid">${r.fotos.map(s=>`<img src="${s}" style="width:100%;height:80px;object-fit:cover;border-radius:9px;cursor:pointer" onclick="openLB('${s}')">`).join('')}</div></div>`:'';
   const retHtml=(r.retrabajos||[]).map((rt,i)=>{
@@ -1177,10 +1228,11 @@ function renderDet(){
   const histHtml=r.historial?.length>1?`<div style="margin-top:9px"><div class="sec-title">Historial</div>${r.historial.slice(1).map(h=>`<div class="hist-item">→ ${h.nota} · ${new Date(h.fecha).toLocaleDateString()}</div>`).join('')}</div>`:'';
   const otrosBtns=['Pendiente','Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':e==='Pendiente'?'cbtn-pend':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
   panel.innerHTML=`<div class="det-box">
-    <div class="det-hdr"><div style="font-weight:900;font-size:14px">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
+    <div class="det-hdr"><div style="font-weight:900;font-size:14px;cursor:pointer" onclick="toggleDet('${r.id}')">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`;})():''}</div>
-    ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds'],['Comentarios',r.comentarios||'—']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
-    <div style="margin-top:9px"><div class="sec-title">Checklist</div><div class="ck-tags">${ckTags}</div></div>
+    ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
+    <div class="fg" style="margin-top:9px"><label class="flabel">Comentarios</label><textarea class="finput" rows="2" placeholder="Sin comentarios" onblur="updateComentario('${r.id}',this.value)">${r.comentarios||''}</textarea></div>
+    ${renderDetChecklist(r)}
     ${defHtml}${retHtml}${fotosHtml}${histHtml}
     <button class="add-ret-btn" onclick="this.style.display='none';document.getElementById('arf-${r.id}').style.display='block'">+ Retrabajo post-entrega</button>
     ${buildAddRetForm(r.id)}
