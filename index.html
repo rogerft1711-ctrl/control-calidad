@@ -1234,41 +1234,53 @@ async function generarReporteOT(){
     <span class="${bclass(r.estado)}">${r.estado}</span>
   </div>`;
 
-  const el=document.createElement('div');
-  el.id='ot-report';
-  el.innerHTML=`
-    <div class="otr-header"><h2>Control de <span>Calidad QC</span></h2><p>Reporte de estado de OT · ${new Date().toLocaleDateString()}</p></div>
-    <div class="otr-section-title" style="color:#fbbf24">🏭 En producción (${enProd.length})</div>
-    ${enProd.length?enProd.map(rowHtml).join(''):'<div class="otr-empty">Sin OT en producción</div>'}
-    <div class="otr-section-title" style="color:#34d399">📦 Entregadas (${entregadas.length})</div>
-    ${entregadas.length?entregadas.map(rowHtml).join(''):'<div class="otr-empty">Sin OT entregadas</div>'}
-    <div class="otr-footer">Generado por Control de Calidad QC</div>`;
-  document.body.appendChild(el);
-  try{
-    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
-    canvasToPagedPDF(canvas,`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
-  } finally {
-    document.body.removeChild(el);
-  }
-}
+  const blocks=[];
+  blocks.push({t:'section',label:`🏭 En producción (${enProd.length})`,color:'#fbbf24'});
+  if(!enProd.length) blocks.push({t:'empty',text:'Sin OT en producción'});
+  enProd.forEach(r=>blocks.push({t:'row',r}));
+  blocks.push({t:'section',label:`📦 Entregadas (${entregadas.length})`,color:'#34d399'});
+  if(!entregadas.length) blocks.push({t:'empty',text:'Sin OT entregadas'});
+  entregadas.forEach(r=>blocks.push({t:'row',r}));
 
-// Convierte un canvas alto en un PDF de varias paginas de tamano razonable
-function canvasToPagedPDF(canvas,filename,pdfW=100,pageHeightPx=1600){
+  const ROWS_PER_PAGE=12;
+  const pages=[]; let current=[]; let rowCount=0;
+  blocks.forEach(b=>{
+    current.push(b);
+    if(b.t==='row'){ rowCount++; if(rowCount>=ROWS_PER_PAGE){ pages.push(current); current=[]; rowCount=0; } }
+  });
+  if(current.length) pages.push(current);
+  if(!pages.length) pages.push([]);
+
   const{jsPDF}=window.jspdf;
-  const totalPages=Math.max(1,Math.ceil(canvas.height/pageHeightPx));
+  const pdfW=100;
   let pdf=null;
-  for(let i=0;i<totalPages;i++){
-    const sliceH=Math.min(pageHeightPx,canvas.height-i*pageHeightPx);
-    const sliceCanvas=document.createElement('canvas');
-    sliceCanvas.width=canvas.width; sliceCanvas.height=sliceH;
-    sliceCanvas.getContext('2d').drawImage(canvas,0,i*pageHeightPx,canvas.width,sliceH,0,0,canvas.width,sliceH);
-    const imgData=sliceCanvas.toDataURL('image/png');
-    const pageHmm=(sliceH*pdfW)/canvas.width;
-    if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
-    else pdf.addPage([pdfW,pageHmm],'p');
-    pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+  for(let p=0;p<pages.length;p++){
+    const isFirst=p===0, isLast=p===pages.length-1;
+    let html=isFirst
+      ?`<div class="otr-header"><h2>Control de <span>Calidad QC</span></h2><p>Reporte de estado de OT · ${new Date().toLocaleDateString()}</p></div>`
+      :`<div class="otr-header"><p>Página ${p+1} de ${pages.length}</p></div>`;
+    pages[p].forEach(b=>{
+      if(b.t==='section') html+=`<div class="otr-section-title" style="color:${b.color}">${b.label}</div>`;
+      else if(b.t==='empty') html+=`<div class="otr-empty">${b.text}</div>`;
+      else html+=rowHtml(b.r);
+    });
+    if(isLast) html+=`<div class="otr-footer">Generado por Control de Calidad QC</div>`;
+    const el=document.createElement('div');
+    el.id='ot-report';
+    el.innerHTML=html;
+    document.body.appendChild(el);
+    try{
+      const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
+      const imgData=canvas.toDataURL('image/png');
+      const pageHmm=(canvas.height*pdfW)/canvas.width;
+      if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
+      else pdf.addPage([pdfW,pageHmm],'p');
+      pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+    } finally {
+      document.body.removeChild(el);
+    }
   }
-  pdf.save(filename);
+  pdf.save(`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
 function resolverRetrabajo(regId,idx){
@@ -1586,49 +1598,80 @@ async function generarReportePDF(){
     if(!ops[k])ops[k]={total:0,ok:0,area:r.area||''};
     ops[k].total++;if(r.estado==='Aprobado')ops[k].ok++;
   });
-  const opRows=Object.entries(ops).sort((a,b)=>b[1].total-a[1].total).map(([name,d])=>{
-    const pct=Math.round((d.ok/d.total)*100);
-    const color=pct>=90?'#34d399':pct>=75?'#fbbf24':'#f87171';
-    return`<div class="rpt-row">
-      <div class="rpt-row-top"><div><div class="rpt-row-name">${name}</div><div class="rpt-row-sub">${d.area} · ${d.total} insp.</div></div><div class="rpt-row-pct" style="color:${color}">${pct}%</div></div>
-      <div class="rpt-bar-wrap"><div class="rpt-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-    </div>`;
-  }).join('');
-
   const allRets=[];
   data.forEach(r=>(r.retrabajos||[]).forEach(rt=>allRets.push(rt)));
   const pend=allRets.filter(rt=>!rt.fechaResolucion).length;
   const res=allRets.length-pend;
   const diasProm=res?Math.round(allRets.filter(rt=>rt.fechaResolucion).reduce((a,rt)=>a+diasEntre(rt.fecha,rt.fechaResolucion),0)/res):null;
 
-  const el=document.createElement('div');
-  el.id='kpi-report';
-  el.innerHTML=`
-    <div class="rpt-header"><h2>Control de <span>Calidad QC</span></h2><p>Reporte de KPIs · ${mes} · ${new Date().toLocaleDateString()}</p></div>
-    <div class="rpt-summary">
+  const summaryHtml=`<div class="rpt-summary">
       <div class="rpt-stat"><b>${data.length}</b><span>Total</span></div>
       <div class="rpt-stat"><b style="color:#94a3b8">${pendQC}</b><span>Pendientes</span></div>
       <div class="rpt-stat"><b style="color:#34d399">${ok}</b><span>Aprobados</span></div>
       <div class="rpt-stat"><b style="color:#f87171">${fail}</b><span>Rechazados</span></div>
       <div class="rpt-stat"><b style="color:#fbbf24">${rev}</b><span>Revisión</span></div>
       <div class="rpt-stat"><b style="color:${tasa>=90?'#34d399':tasa>=75?'#fbbf24':'#f87171'}">${tasa}%</b><span>Tasa (meta 90%)</span></div>
-    </div>
-    <div class="rpt-section-title">KPI por operario</div>
-    ${opRows||'<div class="otr-empty">Sin datos</div>'}
-    <div class="rpt-section-title">Retrabajos</div>
-    <div class="rpt-summary">
+    </div>`;
+  const retSummaryHtml=`<div class="rpt-summary">
       <div class="rpt-stat"><b style="color:#f97316">${allRets.length}</b><span>Total</span></div>
       <div class="rpt-stat"><b style="color:#f87171">${pend}</b><span>Pendientes</span></div>
       <div class="rpt-stat"><b style="color:#34d399">${diasProm!==null?diasProm+'d':'—'}</b><span>Prom. días</span></div>
-    </div>
-    <div class="rpt-footer">Generado por Control de Calidad QC</div>`;
-  document.body.appendChild(el);
-  try{
-    const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
-    canvasToPagedPDF(canvas,`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`,150,2200);
-  } finally {
-    document.body.removeChild(el);
+    </div>`;
+
+  const opEntries=Object.entries(ops).sort((a,b)=>b[1].total-a[1].total);
+  const blocks=[];
+  blocks.push({t:'html',html:summaryHtml});
+  blocks.push({t:'html',html:'<div class="rpt-section-title">KPI por operario</div>'});
+  if(!opEntries.length) blocks.push({t:'html',html:'<div class="otr-empty">Sin datos</div>'});
+  opEntries.forEach(([name,d])=>blocks.push({t:'row',name,d}));
+  blocks.push({t:'html',html:'<div class="rpt-section-title">Retrabajos</div>'});
+  blocks.push({t:'html',html:retSummaryHtml});
+
+  const ROWS_PER_PAGE=15;
+  const pages=[]; let current=[]; let rowCount=0;
+  blocks.forEach(b=>{
+    current.push(b);
+    if(b.t==='row'){ rowCount++; if(rowCount>=ROWS_PER_PAGE){ pages.push(current); current=[]; rowCount=0; } }
+  });
+  if(current.length) pages.push(current);
+  if(!pages.length) pages.push([]);
+
+  const{jsPDF}=window.jspdf;
+  const pdfW=150;
+  let pdf=null;
+  for(let p=0;p<pages.length;p++){
+    const isFirst=p===0, isLast=p===pages.length-1;
+    let html=isFirst
+      ?`<div class="rpt-header"><h2>Control de <span>Calidad QC</span></h2><p>Reporte de KPIs · ${mes} · ${new Date().toLocaleDateString()}</p></div>`
+      :`<div class="rpt-header"><p>Página ${p+1} de ${pages.length}</p></div>`;
+    pages[p].forEach(b=>{
+      if(b.t==='html') html+=b.html;
+      else{
+        const pct=Math.round((b.d.ok/b.d.total)*100);
+        const color=pct>=90?'#34d399':pct>=75?'#fbbf24':'#f87171';
+        html+=`<div class="rpt-row">
+          <div class="rpt-row-top"><div><div class="rpt-row-name">${b.name}</div><div class="rpt-row-sub">${b.d.area} · ${b.d.total} insp.</div></div><div class="rpt-row-pct" style="color:${color}">${pct}%</div></div>
+          <div class="rpt-bar-wrap"><div class="rpt-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>`;
+      }
+    });
+    if(isLast) html+=`<div class="rpt-footer">Generado por Control de Calidad QC</div>`;
+    const el=document.createElement('div');
+    el.id='kpi-report';
+    el.innerHTML=html;
+    document.body.appendChild(el);
+    try{
+      const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
+      const imgData=canvas.toDataURL('image/png');
+      const pageHmm=(canvas.height*pdfW)/canvas.width;
+      if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
+      else pdf.addPage([pdfW,pageHmm],'p');
+      pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+    } finally {
+      document.body.removeChild(el);
+    }
   }
+  pdf.save(`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`);
 }
 </script>
 </body>
