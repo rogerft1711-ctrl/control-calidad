@@ -727,10 +727,10 @@ cargarDatos().then(()=>{
 });
 
 function save(){
-  idbSet('registros', registros).catch(e=>{
+  return idbSet('registros', registros).then(()=>true).catch(e=>{
     alert('⚠️ No se pudo guardar en el almacenamiento del dispositivo. Vuelve a intentarlo; si persiste, exporta un respaldo cuanto antes.');
+    return false;
   });
-  return true;
 }
 
 function savePapelera(){
@@ -1034,10 +1034,12 @@ function buildRetrabajo(){
   return{causaArea:cA,causaOp:cO,repArea:rA,repOp:rO,descripcion:desc,fecha:new Date().toISOString(),fechaResolucion:null,postEntrega:false};
 }
 
-function guardar(){
+async function guardar(){
   const ret=(formEstado==='Rechazado'||formEstado==='En revisión')?buildRetrabajo():null;
   if(ret==='ERROR') return;
   const otNum=document.getElementById('f-ot').value.trim();
+  const submitBtn=document.getElementById('submit-btn');
+  submitBtn.disabled=true; submitBtn.textContent='Guardando...';
   const nuevo={
     id:Date.now().toString(),
     area:document.getElementById('f-area').value,
@@ -1059,7 +1061,12 @@ function guardar(){
   };
   logChecklistProgress(nuevo);
   registros.unshift(nuevo);
-  if(!save()){ registros.shift(); return; }
+  const ok=await save();
+  if(!ok){
+    registros.shift();
+    submitBtn.disabled=false; submitBtn.textContent='✅ Guardar inspección';
+    return;
+  }
   // Reset
   ['f-area','f-operario','r-causa-area','r-causa-op','r-rep-area','r-rep-op'].forEach(id=>document.getElementById(id).value='');
   ['f-operario','r-causa-op','r-rep-op'].forEach(id=>{document.getElementById(id).innerHTML='<option value="">Seleccionar...</option>';});
