@@ -1279,6 +1279,14 @@ function cambiarOtEstado(id,e){
 
 // ── REPORTE DE OT (PDF multipagina, para no recomprimirse al compartir)
 async function generarReporteOT(){
+  try{
+    await generarReporteOTInterno();
+  }catch(e){
+    alert('⚠️ No se pudo generar el reporte de OT: '+(e&&e.message?e.message:e));
+  }
+}
+
+async function generarReporteOTInterno(){
   const conOt=registros.filter(r=>r.ot);
   if(!conOt.length){ alert('Aún no hay OT registradas. Agrega un N° de OT al crear una inspección.'); return; }
   const enProdPendiente=conOt.filter(r=>(r.otEstado||'produccion')==='produccion'&&r.estado!=='Aprobado');
@@ -1645,6 +1653,14 @@ function renderBono(cont, data){
 
 // ── REPORTE PDF (Dashboard + KPIs)
 async function generarReportePDF(){
+  try{
+    await generarReportePDFInterno();
+  }catch(e){
+    alert('⚠️ No se pudo generar el reporte de KPIs: '+(e&&e.message?e.message:e));
+  }
+}
+
+async function generarReportePDFInterno(){
   const mes=selectedMonth==='all'?'Todos los meses':getMonthLabel(selectedMonth);
   const data=filterByMonth(registros);
   if(!data.length){alert('Sin datos para generar el reporte'+(selectedMonth!=='all'?' de '+mes:''));return;}
