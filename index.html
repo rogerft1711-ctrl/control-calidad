@@ -1346,8 +1346,9 @@ async function generarReporteOTInterno(){
       const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
       const imgData=canvas.toDataURL('image/png');
       const pageHmm=(canvas.height*pdfW)/canvas.width;
-      if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
-      else pdf.addPage([pdfW,pageHmm],'p');
+      const orient=pdfW<=pageHmm?'p':'l';
+      if(!pdf) pdf=new jsPDF({orientation:orient,unit:'mm',format:[pdfW,pageHmm]});
+      else pdf.addPage([pdfW,pageHmm],orient);
       pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
     } finally {
       document.body.removeChild(el);
@@ -1745,8 +1746,9 @@ async function generarReportePDFInterno(){
       const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
       const imgData=canvas.toDataURL('image/png');
       const pageHmm=(canvas.height*pdfW)/canvas.width;
-      if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pageHmm]});
-      else pdf.addPage([pdfW,pageHmm],'p');
+      const orient=pdfW<=pageHmm?'p':'l';
+      if(!pdf) pdf=new jsPDF({orientation:orient,unit:'mm',format:[pdfW,pageHmm]});
+      else pdf.addPage([pdfW,pageHmm],orient);
       pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
     } finally {
       document.body.removeChild(el);
