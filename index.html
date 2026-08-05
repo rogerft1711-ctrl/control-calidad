@@ -1279,6 +1279,13 @@ function otBtnsHtml(r){
   return `<div class="cambio-estado"><p>Estado de la OT</p><div class="cambio-btns">${opts.map(o=>`<button class="cbtn ${o[2]}" onclick="cambiarOtEstado('${r.id}','${o[0]}')">${o[1]}</button>`).join('')}</div></div>`;
 }
 
+function cycleOtEstado(id){
+  const r=registros.find(x=>x.id===id);if(!r)return;
+  const orden=['produccion','entregada','instalada'];
+  const idx=orden.indexOf(r.otEstado||'produccion');
+  cambiarOtEstado(id, orden[(idx+1)%orden.length]);
+}
+
 function cambiarOtEstado(id,e){
   const r=registros.find(x=>x.id===id);if(!r)return;
   r.otEstado=e;
@@ -1493,7 +1500,7 @@ function renderDet(){
   const otrosBtns=['Pendiente','Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':e==='Pendiente'?'cbtn-pend':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
   panel.innerHTML=`<div class="det-box">
     <div class="det-hdr"><div style="font-weight:900;font-size:14px;cursor:pointer" onclick="toggleDet('${r.id}')">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">${otLabel(r)}</span>`;})():''}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd};cursor:pointer" onclick="cycleOtEstado('${r.id}')" title="Tocar para cambiar de estado">${otLabel(r)} 🔁</span>`;})():''}</div>
     ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
     <div class="fg" style="margin-top:9px"><label class="flabel">N° de OT</label><input class="finput" value="${r.ot||''}" placeholder="Ej: 1042" inputmode="numeric" pattern="[0-9]*" onblur="updateOtNumero('${r.id}',this.value)"></div>
     <div class="fg" style="margin-top:9px"><label class="flabel">Comentarios</label><textarea class="finput" rows="2" placeholder="Sin comentarios" onblur="updateComentario('${r.id}',this.value)">${r.comentarios||''}</textarea></div>
