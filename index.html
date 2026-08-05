@@ -421,6 +421,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
           <div class="estado-btns">
             <button class="ebtn" id="otb-prod" onclick="setOtEstado('produccion')">🏭 En producción</button>
             <button class="ebtn" id="otb-ent" onclick="setOtEstado('entregada')">📦 Entregada</button>
+            <button class="ebtn" id="otb-inst" onclick="setOtEstado('instalada')">🏠 Instalada</button>
           </div>
         </div>
         <div class="fg"><label class="flabel">Estado</label>
@@ -511,6 +512,7 @@ textarea.finput{resize:none}select.finput{appearance:none;cursor:pointer}
           <button class="fbtn" onclick="setFiltro('Retrabajo',this)">🔧 Retrabajo</button>
           <button class="fbtn" onclick="setFiltro('OT-Produccion',this)">🏭 OT Producción</button>
           <button class="fbtn" onclick="setFiltro('OT-Entregada',this)">📦 OT Entregada</button>
+          <button class="fbtn" onclick="setFiltro('OT-Instalada',this)">🏠 OT Instalada</button>
         </div>
       </div>
       <div id="det-panel"></div>
@@ -887,7 +889,13 @@ function updateOps(areaId, opId){
 }
 
 function bclass(e){ return e==='Aprobado'?'badge b-ok':e==='Rechazado'?'badge b-fail':e==='Pendiente'?'badge b-pend':'badge b-rev'; }
+function otLabel(r){
+  if(r.otEstado==='instalada') return '🏠 Instalada';
+  if(r.otEstado==='entregada') return '📦 Entregada';
+  return '🏭 En producción';
+}
 function otColor(r){
+  if(r.otEstado==='instalada') return {bg:'rgba(96,165,250,0.15)',fg:'#60a5fa',bd:'rgba(96,165,250,0.3)'};
   const done = r.otEstado==='entregada' || r.estado==='Aprobado';
   return done
     ? {bg:'rgba(52,211,153,0.15)',fg:'#34d399',bd:'rgba(52,211,153,0.3)'}
@@ -959,6 +967,7 @@ function setOtEstado(e){
   formOtEstado=e;
   document.getElementById('otb-prod').className='ebtn'+(e==='produccion'?' ok':'');
   document.getElementById('otb-ent').className='ebtn'+(e==='entregada'?' ok':'');
+  document.getElementById('otb-inst').className='ebtn'+(e==='instalada'?' ok':'');
   if(e==='produccion'&&!formEstado) setEstado('Pendiente');
 }
 
@@ -1192,6 +1201,7 @@ function renderRegistros(){
   if(filtro==='Retrabajo') data=data.filter(r=>r.retrabajos?.length);
   else if(filtro==='OT-Produccion') data=data.filter(r=>r.ot&&(r.otEstado||'produccion')==='produccion');
   else if(filtro==='OT-Entregada') data=data.filter(r=>r.ot&&r.otEstado==='entregada');
+  else if(filtro==='OT-Instalada') data=data.filter(r=>r.ot&&r.otEstado==='instalada');
   else if(filtro!=='Todos') data=data.filter(r=>r.estado===filtro);
   if(q) data=data.filter(r=>(r.producto||'').toLowerCase().includes(q)||(r.operario||'').toLowerCase().includes(q)||(r.area||'').toLowerCase().includes(q)||(r.ot||'').toLowerCase().includes(q));
   document.getElementById('reg-count').textContent=data.length+' items';
@@ -1205,7 +1215,7 @@ function renderRegistros(){
       <div class="reg-top">
         <div>
           <div class="reg-name">${r.producto}</div>
-          ${r.ot?`<div style="font-size:16px;font-weight:900;color:#60a5fa;margin:3px 0">🗂️ OT ${r.ot} <span style="font-size:12px;font-weight:800;color:${otColor(r).fg}">· ${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span></div>`:''}
+          ${r.ot?`<div style="font-size:16px;font-weight:900;color:#60a5fa;margin:3px 0">🗂️ OT ${r.ot} <span style="font-size:12px;font-weight:800;color:${otColor(r).fg}">· ${otLabel(r)}</span></div>`:''}
           <div class="reg-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha} · ${r.cantidad} uds</div>
           ${r.comentarios?`<div style="font-size:12px;color:rgba(255,255,255,0.5);font-style:italic;margin:4px 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">💬 ${r.comentarios}</div>`:''}
           <div class="reg-counts">
@@ -1265,7 +1275,7 @@ function cambiarEstado(id,e){
 function otBtnsHtml(r){
   if(!r.ot) return '';
   const cur=r.otEstado||'produccion';
-  const opts=[['produccion','🏭 En producción','cbtn-rev'],['entregada','📦 Entregada','cbtn-ok']].filter(o=>o[0]!==cur);
+  const opts=[['produccion','🏭 En producción','cbtn-rev'],['entregada','📦 Entregada','cbtn-ok'],['instalada','🏠 Instalada','cbtn-ok']].filter(o=>o[0]!==cur);
   return `<div class="cambio-estado"><p>Estado de la OT</p><div class="cambio-btns">${opts.map(o=>`<button class="cbtn ${o[2]}" onclick="cambiarOtEstado('${r.id}','${o[0]}')">${o[1]}</button>`).join('')}</div></div>`;
 }
 
@@ -1292,6 +1302,7 @@ async function generarReporteOTInterno(){
   const enProdPendiente=conOt.filter(r=>(r.otEstado||'produccion')==='produccion'&&r.estado!=='Aprobado');
   const enProdAprobado=conOt.filter(r=>(r.otEstado||'produccion')==='produccion'&&r.estado==='Aprobado');
   const entregadas=conOt.filter(r=>r.otEstado==='entregada');
+  const instaladas=conOt.filter(r=>r.otEstado==='instalada');
 
   const rowHtml=r=>`<div class="otr-row">
     ${r.fotos?.length?`<img class="otr-thumb" src="${r.fotos[0]}">`:'<div class="otr-thumb-empty">📦</div>'}
@@ -1314,6 +1325,9 @@ async function generarReporteOTInterno(){
   blocks.push({t:'section',label:`📦 Entregadas (${entregadas.length})`,color:'#34d399'});
   if(!entregadas.length) blocks.push({t:'empty',text:'Sin OT entregadas'});
   entregadas.forEach(r=>blocks.push({t:'row',r}));
+  blocks.push({t:'section',label:`🏠 Instaladas (${instaladas.length})`,color:'#60a5fa'});
+  if(!instaladas.length) blocks.push({t:'empty',text:'Sin OT instaladas'});
+  instaladas.forEach(r=>blocks.push({t:'row',r}));
 
   const ROWS_PER_PAGE=12;
   const pages=[]; let current=[]; let rowCount=0;
@@ -1324,9 +1338,7 @@ async function generarReporteOTInterno(){
   if(current.length) pages.push(current);
   if(!pages.length) pages.push([]);
 
-  const{jsPDF}=window.jspdf;
-  const pdfW=100;
-  let pdf=null;
+  const rendered=[];
   for(let p=0;p<pages.length;p++){
     const isFirst=p===0, isLast=p===pages.length-1;
     let html=isFirst
@@ -1344,17 +1356,28 @@ async function generarReporteOTInterno(){
     document.body.appendChild(el);
     try{
       const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
-      const imgData=canvas.toDataURL('image/png');
-      const pageHmm=(canvas.height*pdfW)/canvas.width;
-      const orient=pdfW<=pageHmm?'p':'l';
-      if(!pdf) pdf=new jsPDF({orientation:orient,unit:'mm',format:[pdfW,pageHmm]});
-      else pdf.addPage([pdfW,pageHmm],orient);
-      pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+      rendered.push({imgData:canvas.toDataURL('image/png'),w:canvas.width,h:canvas.height});
     } finally {
       document.body.removeChild(el);
     }
   }
-  pdf.save(`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
+  guardarPdfPaginado(rendered,100,`Reporte_OT_${new Date().toISOString().split('T')[0]}.pdf`);
+}
+
+// Arma un PDF con todas las paginas del MISMO tamano fijo (evita deformaciones
+// cuando la ultima pagina tiene menos contenido que las demas)
+function guardarPdfPaginado(rendered,pdfW,filename){
+  const{jsPDF}=window.jspdf;
+  const heightsMm=rendered.map(r=>(r.h*pdfW)/r.w);
+  const pdfH=Math.max(...heightsMm);
+  let pdf=null;
+  rendered.forEach(r=>{
+    const hmm=(r.h*pdfW)/r.w;
+    if(!pdf) pdf=new jsPDF({orientation:'p',unit:'mm',format:[pdfW,pdfH]});
+    else pdf.addPage();
+    pdf.addImage(r.imgData,'PNG',0,0,pdfW,hmm);
+  });
+  pdf.save(filename);
 }
 
 function resolverRetrabajo(regId,idx){
@@ -1470,7 +1493,7 @@ function renderDet(){
   const otrosBtns=['Pendiente','Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':e==='Pendiente'?'cbtn-pend':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
   panel.innerHTML=`<div class="det-box">
     <div class="det-hdr"><div style="font-weight:900;font-size:14px;cursor:pointer" onclick="toggleDet('${r.id}')">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">${r.otEstado==='entregada'?'📦 Entregada':'🏭 En producción'}</span>`;})():''}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">${otLabel(r)}</span>`;})():''}</div>
     ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
     <div class="fg" style="margin-top:9px"><label class="flabel">N° de OT</label><input class="finput" value="${r.ot||''}" placeholder="Ej: 1042" inputmode="numeric" pattern="[0-9]*" onblur="updateOtNumero('${r.id}',this.value)"></div>
     <div class="fg" style="margin-top:9px"><label class="flabel">Comentarios</label><textarea class="finput" rows="2" placeholder="Sin comentarios" onblur="updateComentario('${r.id}',this.value)">${r.comentarios||''}</textarea></div>
@@ -1718,9 +1741,8 @@ async function generarReportePDFInterno(){
   if(current.length) pages.push(current);
   if(!pages.length) pages.push([]);
 
-  const{jsPDF}=window.jspdf;
   const pdfW=150;
-  let pdf=null;
+  const rendered=[];
   for(let p=0;p<pages.length;p++){
     const isFirst=p===0, isLast=p===pages.length-1;
     let html=isFirst
@@ -1744,17 +1766,12 @@ async function generarReportePDFInterno(){
     document.body.appendChild(el);
     try{
       const canvas=await html2canvas(el,{backgroundColor:'#0a0a0f',scale:2});
-      const imgData=canvas.toDataURL('image/png');
-      const pageHmm=(canvas.height*pdfW)/canvas.width;
-      const orient=pdfW<=pageHmm?'p':'l';
-      if(!pdf) pdf=new jsPDF({orientation:orient,unit:'mm',format:[pdfW,pageHmm]});
-      else pdf.addPage([pdfW,pageHmm],orient);
-      pdf.addImage(imgData,'PNG',0,0,pdfW,pageHmm);
+      rendered.push({imgData:canvas.toDataURL('image/png'),w:canvas.width,h:canvas.height});
     } finally {
       document.body.removeChild(el);
     }
   }
-  pdf.save(`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`);
+  guardarPdfPaginado(rendered,pdfW,`Reporte_KPI_${selectedMonth==='all'?'completo':selectedMonth}.pdf`);
 }
 </script>
 </body>
