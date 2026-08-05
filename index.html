@@ -1283,7 +1283,7 @@ function cambiarOtEstado(id,e){
   const r=registros.find(x=>x.id===id);if(!r)return;
   r.otEstado=e;
   r.historial=r.historial||[];
-  r.historial.push({estado:r.estado,fecha:new Date().toISOString(),nota:`OT → ${e==='entregada'?'Entregada':'En producción'}`});
+  r.historial.push({estado:r.estado,fecha:new Date().toISOString(),nota:`OT → ${otLabel(r)}`});
   save();renderDet();renderRegistros();
 }
 
