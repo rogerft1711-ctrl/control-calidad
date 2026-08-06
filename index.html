@@ -889,6 +889,12 @@ function updateOps(areaId, opId){
 }
 
 function bclass(e){ return e==='Aprobado'?'badge b-ok':e==='Rechazado'?'badge b-fail':e==='Pendiente'?'badge b-pend':'badge b-rev'; }
+function estadoBadgeHtml(r,extraStyle){
+  const instalada=r.estado==='Aprobado'&&r.otEstado==='instalada';
+  const cls=instalada?'badge':bclass(r.estado);
+  const style=(instalada?'background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);':'')+(extraStyle||'');
+  return `<span class="${cls}"${style?` style="${style}"`:''}>${r.estado}</span>`;
+}
 function otLabel(r){
   if(r.otEstado==='instalada') return '🏠 Instalada';
   if(r.otEstado==='entregada') return '📦 Entregada';
@@ -1154,7 +1160,7 @@ function renderDashboard(){
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div><div class="dri-name">${r.producto}</div><div class="dri-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha}</div></div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-            <span class="${bclass(r.estado)}">${r.estado}</span>
+            ${estadoBadgeHtml(r)}
             ${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}
           </div>
         </div>
@@ -1225,7 +1231,7 @@ function renderRegistros(){
             ${r.retrabajos?.length?`<span style="color:#fdba74">🔧 ${r.retrabajos.length}</span>`:''}
           </div>
         </div>
-        <span class="${bclass(r.estado)}" style="font-size:11px;padding:4px 10px">${r.estado}</span>
+        ${estadoBadgeHtml(r,'font-size:11px;padding:4px 10px')}
       </div>
     </div>`;
   }).join('') + (data.length>regShownCount?`<button onclick="cargarMasRegistros()" class="dash-see-all">Cargar más (${data.length-regShownCount} restantes)</button>`:'');
@@ -1248,7 +1254,7 @@ function renderPapeleraList(){
           <div class="reg-meta">${r.operario||'—'} · ${r.area||''} · ${r.fecha}</div>
           <div class="reg-meta" style="color:#f87171">🗑️ Se elimina definitivamente en ${restantes} día(s)</div>
         </div>
-        <span class="${bclass(r.estado)}">${r.estado}</span>
+        ${estadoBadgeHtml(r)}
       </div>
       <div style="display:flex;gap:6px;margin-top:8px">
         <button onclick="restaurarRegistro('${r.id}')" style="flex:1;padding:8px;border-radius:9px;border:none;cursor:pointer;background:rgba(52,211,153,0.2);color:#34d399;font-weight:700;font-size:11px;font-family:'DM Sans',sans-serif">♻️ Restaurar</button>
@@ -1319,7 +1325,7 @@ async function generarReporteOTInterno(){
       <div class="otr-meta">${[r.area,r.operario].filter(Boolean).join(' · ')}</div>
       ${r.comentarios?`<div class="otr-comment">💬 ${r.comentarios}</div>`:''}
     </div>
-    <span class="${bclass(r.estado)}" style="font-size:11px">${r.estado}</span>
+    ${estadoBadgeHtml(r,'font-size:11px')}
   </div>`;
 
   const blocks=[];
@@ -1500,7 +1506,7 @@ function renderDet(){
   const otrosBtns=['Pendiente','Aprobado','Rechazado','En revisión'].filter(e=>e!==r.estado).map(e=>`<button class="cbtn ${e==='Aprobado'?'cbtn-ok':e==='Rechazado'?'cbtn-fail':e==='Pendiente'?'cbtn-pend':'cbtn-rev'}" onclick="cambiarEstado('${r.id}','${e}')">${e}</button>`).join('');
   panel.innerHTML=`<div class="det-box">
     <div class="det-hdr"><div style="font-weight:900;font-size:14px;cursor:pointer" onclick="toggleDet('${r.id}')">${r.producto}</div><button class="det-close" onclick="toggleDet('${r.id}')">✕</button></div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span class="${bclass(r.estado)}">${r.estado}</span>${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd};cursor:pointer" onclick="cycleOtEstado('${r.id}')" title="Tocar para cambiar de estado">${otLabel(r)} 🔁</span>`;})():''}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${estadoBadgeHtml(r)}${r.retrabajos?.length?`<span class="badge b-ret">🔧 ${r.retrabajos.length}</span>`:''}${r.ot?`<span class="badge" style="background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3)">🗂️ ${r.ot}</span>`:''}${r.ot?(()=>{const c=otColor(r);return `<span class="badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd};cursor:pointer" onclick="cycleOtEstado('${r.id}')" title="Tocar para cambiar de estado">${otLabel(r)} 🔁</span>`;})():''}</div>
     ${[['Área',r.area||'—'],['Operario',r.operario||'—'],['Fecha',r.fecha],['Cantidad',r.cantidad+' uds']].map(([k,v])=>`<div class="det-row"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`).join('')}
     <div class="fg" style="margin-top:9px"><label class="flabel">N° de OT</label><input class="finput" value="${r.ot||''}" placeholder="Ej: 1042" inputmode="numeric" pattern="[0-9]*" onblur="updateOtNumero('${r.id}',this.value)"></div>
     <div class="fg" style="margin-top:9px"><label class="flabel">Comentarios</label><textarea class="finput" rows="2" placeholder="Sin comentarios" onblur="updateComentario('${r.id}',this.value)">${r.comentarios||''}</textarea></div>
